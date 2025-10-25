@@ -131,9 +131,9 @@ loadProviderConfigs();
 // ==================== TOKENIZATION FUNCTIONS ====================
 
 /**
- * Tokenize card directly (for providers like Stripe)
+ * Tokeniza una tarjeta directamente sin sesión
  */
-export const tokenizeCardDirect = functions.https.onRequest(
+export const paymentTokenizeCardDirect = functions.https.onRequest(
   async (req, res) => {
     try {
       // Validate request method
@@ -209,9 +209,9 @@ export const tokenizeCardDirect = functions.https.onRequest(
 );
 
 /**
- * Create tokenization session with redirect (for providers like Transbank)
+ * Crea una sesión de tokenización
  */
-export const createTokenizationSession = functions.https.onRequest(
+export const paymentCreateTokenizationSession = functions.https.onRequest(
   async (req, res) => {
     try {
       // Validate request method
@@ -286,9 +286,9 @@ export const createTokenizationSession = functions.https.onRequest(
 );
 
 /**
- * Complete tokenization from redirect callback
+ * Completa el proceso de tokenización
  */
-export const completeTokenization = functions.https.onRequest(
+export const paymentCompleteTokenization = functions.https.onRequest(
   async (req, res) => {
     try {
       // Validate request method
@@ -367,9 +367,9 @@ export const completeTokenization = functions.https.onRequest(
 // ==================== PAYMENT FUNCTIONS ====================
 
 /**
- * Process payment with tokenized card
+ * Procesa un pago con el proveedor correspondiente
  */
-export const processPayment = functions.https.onRequest(
+export const paymentProcessPayment = functions.https.onRequest(
   async (req, res) => {
     try {
       // Validate request method
@@ -585,7 +585,7 @@ export const processPayment = functions.https.onRequest(
 /**
  * Refund a payment
  */
-export const refundPayment = functions.https.onRequest(
+export const paymentRefundPayment = functions.https.onRequest(
   async (req, res) => {
     try {
       // Validate request method
@@ -667,7 +667,7 @@ export const refundPayment = functions.https.onRequest(
 /**
  * Get execution location and environment info
  */
-export const getExecutionLocation = functions.https.onRequest(
+export const paymentGetExecutionLocation = functions.https.onRequest(
   async (req, res) => {
     try {
       // Validate request method
@@ -741,7 +741,7 @@ export const getExecutionLocation = functions.https.onRequest(
  * Unified webhook handler for all payment providers
  * Route: /webhook/{provider} where provider is: stripe, transbank, mercadopago
  */
-export const webhook = functions.https.onRequest(async (req, res) => {
+export const paymentWebhook = functions.https.onRequest(async (req, res) => {
   try {
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
@@ -816,7 +816,7 @@ export const webhook = functions.https.onRequest(async (req, res) => {
 /**
  * Get available payment providers and their information
  */
-export const getAvailableProviders = functions.https.onRequest(
+export const paymentGetAvailableProviders = functions.https.onRequest(
   async (req, res) => {
     try {
       // Validate request method
