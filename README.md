@@ -1,145 +1,286 @@
-# 🚀 Linku Payment Gateway
+# Linku Payment Functions# 🚀 Linku Payment Gateway
 
-**Firebase Cloud Functions para integración completa de pagos**
 
-> Integración real con Stripe, Transbank y MercadoPago usando SDKs oficiales  
+
+Sistema de gateway de pagos que unifica múltiples proveedores bajo una API consistente.**Firebase Cloud Functions para integración completa de pagos**
+
+
+
+## Arquitectura> Integración real con Stripe, Transbank y MercadoPago usando SDKs oficiales  
+
 > **✨ Ahora con autenticación Bearer Token y validación User-Agent**
 
+Este repositorio contiene las funciones específicas del dominio de pagos como parte del ecosistema Linku microservicios.
+
 ---
 
-## ⚡ **Setup Rápido**
+- **Repositorio Principal**: linku-core (orquestrador)  
 
-```bash
+- **Este Repositorio**: linku-payment-functions (dominio de pagos)## ⚡ **Setup Rápido**
+
+
+
+## Características```bash
+
 # 1. Clonar repositorio  
-git clone https://github.com/aldemi-tech/linku-payment-gateway.git
-cd linku-payment-gateway
 
-# 2. Setup automático (crea repo, secrets, deploy)
-./setup.sh
-```
+- Soporte para múltiples proveedores de pago:git clone https://github.com/aldemi-tech/linku-payment-gateway.git
 
-**¡Eso es todo!** El script hace:
+  - Stripecd linku-payment-gateway
+
+  - Transbank (Chile) 
+
+  - MercadoPago# 2. Setup automático (crea repo, secrets, deploy)
+
+- Tokenización de tarjetas para pagos seguros./setup.sh
+
+- Procesamiento de pagos unificado```
+
+- Sistema de credenciales de prueba automático
+
+- Lazy initialization para mejor rendimiento**¡Eso es todo!** El script hace:
+
 - ✅ Instala dependencias
-- ✅ Genera Firebase CI token seguramente  
+
+## Funciones Exportadas- ✅ Genera Firebase CI token seguramente  
+
 - ✅ Configura GitHub Secrets
-- ✅ Despliega automáticamente a Firebase
+
+### Tokenización- ✅ Despliega automáticamente a Firebase
+
+- `paymentTokenizeCardDirect`: Tokeniza tarjetas de crédito
 
 ---
 
-## 🎯 Características
+### Procesamiento
 
-### 🔐 **Seguridad Mejorada**
+- `paymentProcessPayment`: Procesa pagos usando tokens## 🎯 Características
+
+- `paymentGetPaymentStatus`: Consulta estado de pagos
+
+- `paymentCancelPayment`: Cancela transacciones### 🔐 **Seguridad Mejorada**
+
 - ✅ **Bearer Token Authentication** - Validación de tokens Firebase Auth
-- ✅ **User-Agent Validation** - Debe comenzar con "Linku"
-- ✅ **Request Metadata** - Tracking completo de headers y ubicación
+
+### Utilidades- ✅ **User-Agent Validation** - Debe comenzar con "Linku"
+
+- `paymentGetProviders`: Lista proveedores disponibles- ✅ **Request Metadata** - Tracking completo de headers y ubicación
+
 - ✅ **Execution Location Detection** - Detecta ubicación via headers x-appengine-*
 
+## Instalación
+
 ### Proveedores Soportados
-- ✅ **Stripe** - Tokenización directa
-- ✅ **Transbank OneClick** - Tokenización con redirección web
-- ✅ **MercadoPago** - Tokenización directa con CVC opcional
 
-### Arquitectura
+```bash- ✅ **Stripe** - Tokenización directa
+
+npm install- ✅ **Transbank OneClick** - Tokenización con redirección web
+
+```- ✅ **MercadoPago** - Tokenización directa con CVC opcional
+
+
+
+## Configuración### Arquitectura
+
 - 🔄 **HTTP Request Functions** (no más onCall)
-- 📍 **Location Tracking** - Metadata en cada operación
-- 🛡️ **Enhanced Validation** - Bearer + User-Agent + Metadata
 
-### Métodos de Tokenización
-1. **Tokenización Directa** (Stripe/MercadoPago)
-   - Formulario en la app
-   - Sin redirección
-   - Inmediato
+### Credenciales de Producción- 📍 **Location Tracking** - Metadata en cada operación
 
-2. **Tokenización con Redirección** (Transbank)
-   - Genera link de pago
-   - Abre WebView
-   - Callback de confirmación
+Configura en Firebase Remote Config:- 🛡️ **Enhanced Validation** - Bearer + User-Agent + Metadata
 
-## 📁 Estructura del Proyecto
 
-```
-payment-gateway-functions/
+
+```json### Métodos de Tokenización
+
+{1. **Tokenización Directa** (Stripe/MercadoPago)
+
+  "stripe": {   - Formulario en la app
+
+    "secretKey": "sk_live_...",   - Sin redirección
+
+    "publicKey": "pk_live_..."   - Inmediato
+
+  },
+
+  "transbank": {2. **Tokenización con Redirección** (Transbank)
+
+    "commerceCode": "12345678",   - Genera link de pago
+
+    "apiKey": "real_api_key_here"   - Abre WebView
+
+  },   - Callback de confirmación
+
+  "mercadopago": {
+
+    "accessToken": "PROD-..."## 📁 Estructura del Proyecto
+
+  }
+
+}```
+
+```payment-gateway-functions/
+
 ├── src/
-│   ├── index.ts                 # Cloud Functions principales
-│   ├── types/
-│   │   └── index.ts            # TypeScript types e interfaces
-│   ├── utils/
-│   │   └── index.ts            # Utilidades compartidas
+
+### Credenciales de Prueba (Automáticas)│   ├── index.ts                 # Cloud Functions principales
+
+Si no se proporcionan credenciales, el sistema usa automáticamente:│   ├── types/
+
+- Stripe: Credenciales de test oficiales│   │   └── index.ts            # TypeScript types e interfaces
+
+- Transbank: Ambiente de integración │   ├── utils/
+
+- MercadoPago: Tokens de sandbox│   │   └── index.ts            # Utilidades compartidas
+
 │   └── providers/
-│       ├── base.ts             # Interface base
+
+## Uso│       ├── base.ts             # Interface base
+
 │       ├── factory.ts          # Factory de proveedores
-│       ├── stripe.ts           # Implementación Stripe
-│       └── transbank.ts        # Implementación Transbank
-├── lib/                         # Código compilado (generado)
-├── node_modules/
-├── package.json
-├── tsconfig.json
-├── .eslintrc.js
-├── firebase.json
-└── README.md
+
+```typescript│       ├── stripe.ts           # Implementación Stripe
+
+// Tokenización│       └── transbank.ts        # Implementación Transbank
+
+const token = await paymentTokenizeCardDirect({├── lib/                         # Código compilado (generado)
+
+  provider: 'stripe',├── node_modules/
+
+  cardData: {├── package.json
+
+    number: '4242424242424242',├── tsconfig.json
+
+    expiryMonth: '12',├── .eslintrc.js
+
+    expiryYear: '2025',├── firebase.json
+
+    cvv: '123',└── README.md
+
+    holderName: 'John Doe'```
+
+  }
+
+});## 🚀 Instalación
+
+
+
+// Procesamiento### 1. Clonar e Instalar Dependencias
+
+const payment = await paymentProcessPayment({
+
+  provider: 'stripe',```bash
+
+  amount: 10000,cd payment-gateway-functions
+
+  currency: 'clp',npm install
+
+  token: token.token,```
+
+  orderId: 'order_123'
+
+});### 2. Configurar Firebase
+
 ```
 
-## 🚀 Instalación
-
-### 1. Clonar e Instalar Dependencias
-
 ```bash
-cd payment-gateway-functions
-npm install
-```
 
-### 2. Configurar Firebase
+## Desarrollo# Login a Firebase
 
-```bash
-# Login a Firebase
 firebase login
 
-# Inicializar proyecto (si no está inicializado)
-firebase init functions
+### Tests
 
-# Seleccionar proyecto existente o crear uno nuevo
+```bash# Inicializar proyecto (si no está inicializado)
+
+npm testfirebase init functions
+
 ```
 
-### 3. Configurar Variables de Entorno
+# Seleccionar proyecto existente o crear uno nuevo
+
+### Build```
+
+```bash
+
+npm run build### 3. Configurar Variables de Entorno
+
+```
 
 #### Opción A: Firebase Functions Config (Recomendado para producción)
 
-```bash
-# Stripe
-firebase functions:config:set stripe.public_key="pk_live_..."
+### Deploy Payment Functions
+
+```bash```bash
+
+# Deploy todas las funciones de pago# Stripe
+
+firebase deploy --only functions:paymentfirebase functions:config:set stripe.public_key="pk_live_..."
+
 firebase functions:config:set stripe.secret_key="sk_live_..."
-firebase functions:config:set stripe.webhook_secret="whsec_..."
 
-# Transbank
+# Deploy función específicafirebase functions:config:set stripe.webhook_secret="whsec_..."
+
+firebase deploy --only functions:paymentTokenizeCardDirect
+
+```# Transbank
+
 firebase functions:config:set transbank.merchant_id="123456789"
-firebase functions:config:set transbank.secret_key="your_secret_key"
-firebase functions:config:set transbank.api_url="https://webpay3g.transbank.cl"
-```
 
-#### Opción B: Variables de Entorno Locales (Para desarrollo)
+## Proveedores Soportadosfirebase functions:config:set transbank.secret_key="your_secret_key"
+
+firebase functions:config:set transbank.api_url="https://webpay3g.transbank.cl"
+
+### Stripe```
+
+- Tokenización completa
+
+- Procesamiento inmediato#### Opción B: Variables de Entorno Locales (Para desarrollo)
+
+- Webhooks de estado
 
 Crear archivo `.env` en la raíz:
 
-```env
-STRIPE_PUBLIC_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
+### Transbank
+
+- Integración con Webpay Plus```env
+
+- Ambiente de pruebas automáticoSTRIPE_PUBLIC_KEY=pk_test_...
+
+- Confirmación de transaccionesSTRIPE_SECRET_KEY=sk_test_...
+
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-TRANSBANK_MERCHANT_ID=123456789
-TRANSBANK_SECRET_KEY=your_secret_key
-TRANSBANK_API_URL=https://webpay3gint.transbank.cl
+### MercadoPago
+
+- API v1 y v2TRANSBANK_MERCHANT_ID=123456789
+
+- Sandbox automáticoTRANSBANK_SECRET_KEY=your_secret_key
+
+- Notificaciones IPNTRANSBANK_API_URL=https://webpay3gint.transbank.cl
+
 ```
+
+## Contribución
 
 ### 🚀 **NUEVO: Credenciales de Prueba Automáticas**
 
-¡Ahora puedes empezar a desarrollar sin configurar nada! 
+1. Fork este repositorio específico
 
-- ✅ **Transbank**: Se inicializa automáticamente con credenciales de prueba públicas
-- ⚠️ **Stripe**: Requiere tus propias claves de prueba (desde tu dashboard de Stripe)
+2. Crea rama feature: `git checkout -b feature/payment-improvement`¡Ahora puedes empezar a desarrollar sin configurar nada! 
+
+3. Commit cambios: `git commit -m 'feat: improve stripe integration'`
+
+4. Push: `git push origin feature/payment-improvement`- ✅ **Transbank**: Se inicializa automáticamente con credenciales de prueba públicas
+
+5. Crear Pull Request- ⚠️ **Stripe**: Requiere tus propias claves de prueba (desde tu dashboard de Stripe)
+
 - ⚠️ **MercadoPago**: Requiere crear una aplicación de prueba en tu cuenta
 
+## Licencia
+
 **Verificar providers disponibles:**
-```bash
+
+MIT License```bash
 curl https://tu-proyecto.cloudfunctions.net/getAvailableProviders
 ```
 
