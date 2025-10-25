@@ -1,7 +1,7 @@
 {
-  "name": "payment-gateway-functions",
+  "name": "linku-payment-functions",
   "version": "1.0.0",
-  "description": "Firebase Cloud Functions for Payment Gateway - Supports Stripe, Transbank and multiple tokenization methods",
+  "description": "Payment domain functions for Aldemi ecosystem - Stripe, Transbank, MercadoPago support",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
