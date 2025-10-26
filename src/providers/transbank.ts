@@ -101,8 +101,23 @@ export class TransbankProvider {
     request: RedirectTokenizationRequest
   ): Promise<RedirectTokenizationResponse> {
     try {
-      const username = `user_${request.user_id}_${Date.now()}`;
+      // Use user_id directly but ensure it doesn't exceed 40 chars (Transbank limit)
+      let username = request.user_id;
+      if (username.length > 40) {
+        // If user_id is too long, use a hash or truncate with a hash suffix
+        const crypto = require('crypto');
+        const hash = crypto.createHash('md5').update(username).digest('hex').substring(0, 8);
+        username = username.substring(0, 31) + '_' + hash; // 31 + 1 + 8 = 40 chars max
+      }
+      
       const email = (request.metadata?.email as string) || `${username}@example.com`;
+
+      console.log("Transbank inscription details:", {
+        originalUserId: request.user_id,
+        username: username,
+        usernameLength: username.length,
+        email: email
+      });
 
       // Create inscription with Transbank Oneclick
       const mallInscription = new Oneclick.MallInscription(Oneclick.getDefaultOptions());
