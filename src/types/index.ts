@@ -93,8 +93,8 @@ export interface RedirectTokenizationRequest {
 export interface RedirectTokenizationResponse {
   session_id: string;
   redirect_url: string;
-  token: string;
-  template: {
+  token?: string; // Optional - used by Transbank
+  template?: {    // Optional - used by Transbank
     method: "GET" | "POST";
     include_in: "query" | "body";
     parameter_name: string;

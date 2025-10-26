@@ -8,6 +8,9 @@ import { config } from 'dotenv';
 // Configurar variables de entorno para testing
 config({ path: '.env.test' });
 
+// Import mocks
+import './__mocks__/transbank-sdk';
+
 // Mock Firebase Admin para testing
 jest.mock('firebase-admin', () => {
   const mockFirestore = {
@@ -36,6 +39,14 @@ jest.mock('firebase-admin', () => {
     auth: jest.fn(() => mockAuth)
   };
 });
+
+// Mock Firebase Functions para testing
+jest.mock('firebase-functions', () => ({
+  config: jest.fn(() => ({})),
+  https: {
+    onRequest: jest.fn((handler) => handler)
+  }
+}));
 
 // Configurar timeout global para tests
 jest.setTimeout(10000);
