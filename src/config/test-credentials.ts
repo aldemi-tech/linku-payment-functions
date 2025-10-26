@@ -5,7 +5,7 @@
 
 // Transbank test credentials (these are publicly documented)
 export const TRANSBANK_TEST_CONFIG = {
-  commerceCode: "597055555532", // OneClick Mall test commerce code
+  commerceCode: "597055555541", // OneClick Mall test commerce code (correct one)
   apiKey: "579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C", // Test API key
   environment: "integration"
 };
