@@ -121,15 +121,15 @@ export class TransbankProvider {
 
       // Create inscription with Transbank Oneclick
       const mallInscription = new Oneclick.MallInscription(Oneclick.getDefaultOptions());
-      const response = await mallInscription.start(
+      const response: {token: string, url_webpay: string} = await mallInscription.start(
         username,
         email,
         request.return_url
       );
       console.log("Transbank inscription response:", response);
-      if (response.responseCode !== 0) {
+      if (!response.token) {
         throw new PaymentGatewayError(
-          `Transbank inscription initiation failed: ${response.responseCode}`,
+          `Transbank inscription initiation failed: ${response}`,
           "INSCRIPTION_INITIATION_FAILED"
         );
       }
@@ -150,6 +150,8 @@ export class TransbankProvider {
         expires_at: Timestamp.fromDate(new Date(Date.now() + 30 * 60 * 1000)), // 30 minutes
         metadata: request.metadata,
       };
+      
+      console.log("Saving Transbank tokenization session:", sessionData);
 
       await admin.firestore().collection("tokenization_sessions").doc(sessionId).set(sessionData);
 
@@ -194,7 +196,7 @@ export class TransbankProvider {
       const response = await mallInscription.finish(token);
 
       console.log("Transbank inscription completion response:", response);
-      
+
       if (response.responseCode !== 0) {
         throw new PaymentGatewayError(
           `Transbank inscription failed: ${response.responseCode}`,
