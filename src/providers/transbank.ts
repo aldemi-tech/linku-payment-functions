@@ -21,7 +21,31 @@ import {
 
 // Import Transbank SDK - Using require due to SDK compatibility
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { OneClick, IntegrationCommerceCodes, IntegrationApiKeys } = require("transbank-sdk");
+let OneClick: any, IntegrationCommerceCodes: any, IntegrationApiKeys: any;
+
+try {
+  console.log("Attempting to load Transbank SDK...");
+  const transbankSdk = require("transbank-sdk");
+  console.log("Raw SDK object:", Object.keys(transbankSdk || {}));
+  
+  OneClick = transbankSdk?.OneClick;
+  IntegrationCommerceCodes = transbankSdk?.IntegrationCommerceCodes;
+  IntegrationApiKeys = transbankSdk?.IntegrationApiKeys;
+  
+  console.log("Transbank SDK loaded:", {
+    hasOneClick: !!OneClick,
+    hasCommerceCodes: !!IntegrationCommerceCodes,
+    hasApiKeys: !!IntegrationApiKeys,
+    oneClickMethods: OneClick ? Object.getOwnPropertyNames(OneClick) : []
+  });
+} catch (error: any) {
+  console.error("Failed to load Transbank SDK:", error);
+  console.error("Error details:", {
+    message: error?.message,
+    stack: error?.stack,
+    code: error?.code
+  });
+}
 import { TRANSBANK_TEST_CONFIG } from "../config/test-credentials";
 
 export class TransbankProvider {
@@ -31,6 +55,14 @@ export class TransbankProvider {
   private environment: string = "integration"; // "integration" or "production"
 
   initialize(config: Record<string, any>): void {
+    // Check if Transbank SDK is available
+    if (!OneClick) {
+      throw new PaymentGatewayError(
+        "Transbank SDK is not available. Please ensure transbank-sdk package is installed.",
+        "SDK_NOT_AVAILABLE"
+      );
+    }
+
     // Use provided config or fall back to test credentials
     if (config && Object.keys(config).length > 0) {
       this.commerceCode = config.commerceCode;
@@ -45,15 +77,25 @@ export class TransbankProvider {
     }
 
     // Fallback to SDK defaults if still empty
-    if (!this.commerceCode) {
+    if (!this.commerceCode && IntegrationCommerceCodes) {
       this.commerceCode = IntegrationCommerceCodes.ONECLICK_MALL;
     }
-    if (!this.apiKey) {
+    if (!this.apiKey && IntegrationApiKeys) {
       this.apiKey = IntegrationApiKeys.WEBPAY;
     }
 
+    console.log("Transbank configuration:", {
+      commerceCode: this.commerceCode,
+      environment: this.environment,
+      hasApiKey: !!this.apiKey
+    });
+
     // Configure Transbank SDK
     try {
+      if (!OneClick.configureForIntegration) {
+        throw new Error("OneClick.configureForIntegration method is not available");
+      }
+
       if (this.environment === "production") {
         OneClick.configureForProduction(this.commerceCode, this.apiKey);
       } else {
@@ -63,12 +105,12 @@ export class TransbankProvider {
           this.apiKey
         );
       }
-    } catch (error) {
-      console.warn("Failed to configure Transbank SDK, using default integration settings:", error);
-      // Fallback to default integration settings
-      OneClick.configureForIntegration(
-        IntegrationCommerceCodes.ONECLICK_MALL,
-        IntegrationApiKeys.WEBPAY
+      console.log("Transbank SDK configured successfully for", this.environment);
+    } catch (error: any) {
+      console.error("Failed to configure Transbank SDK:", error);
+      throw new PaymentGatewayError(
+        `Failed to configure Transbank SDK: ${error.message || error}`,
+        "SDK_CONFIGURATION_ERROR"
       );
     }
   }
