@@ -126,7 +126,13 @@ export class TransbankProvider {
         email,
         request.return_url
       );
-
+      console.log("Transbank inscription response:", response);
+      if (response.responseCode !== 0) {
+        throw new PaymentGatewayError(
+          `Transbank inscription initiation failed: ${response.responseCode}`,
+          "INSCRIPTION_INITIATION_FAILED"
+        );
+      }
       // Save session to Firestore
       const sessionId = `tbk_${response.token}`;
       const sessionData = {
@@ -134,7 +140,7 @@ export class TransbankProvider {
         user_id: request.user_id,
         provider: this.name,
         status: "pending",
-        redirect_url: response.urlWebpay,
+        redirect_url: response.url_webpay,
         return_url: request.return_url,
         token: response.token,
         username: username,
@@ -149,7 +155,7 @@ export class TransbankProvider {
 
       return {
         session_id: sessionId,
-        redirect_url: response.urlWebpay,
+        redirect_url: response.url_webpay,
         expires_at: sessionData.expires_at,
       };
     } catch (error: any) {
