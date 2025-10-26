@@ -158,6 +158,12 @@ export class TransbankProvider {
       return {
         session_id: sessionId,
         redirect_url: response.url_webpay,
+        token: response.token,
+        template: {
+          method: "POST",
+          include_in: "body",
+          parameter_name: "TBK_TOKEN",
+        },
         expires_at: sessionData.expires_at,
       };
     } catch (error: any) {

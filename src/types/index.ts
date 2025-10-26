@@ -93,6 +93,12 @@ export interface RedirectTokenizationRequest {
 export interface RedirectTokenizationResponse {
   session_id: string;
   redirect_url: string;
+  token: string;
+  template: {
+    method: "GET" | "POST";
+    include_in: "query" | "body";
+    parameter_name: string;
+  };
   expires_at: Timestamp;
 }
 
