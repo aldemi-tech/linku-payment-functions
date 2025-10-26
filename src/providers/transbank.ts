@@ -1,6 +1,6 @@
 /**
  * Transbank Payment Provider (Simplified Implementation)
- * Handles tokenization and payments through Transbank OneClick
+ * Handles tokenization and payments through Transbank Oneclick
  */
 
 import { Timestamp } from "firebase-admin/firestore";
@@ -19,33 +19,8 @@ import {
   PaymentCard,
 } from "../types";
 
-// Import Transbank SDK - Using require due to SDK compatibility
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-let OneClick: any, IntegrationCommerceCodes: any, IntegrationApiKeys: any;
-
-try {
-  console.log("Attempting to load Transbank SDK...");
-  const transbankSdk = require("transbank-sdk");
-  console.log("Raw SDK object:", Object.keys(transbankSdk || {}));
-  
-  OneClick = transbankSdk?.OneClick;
-  IntegrationCommerceCodes = transbankSdk?.IntegrationCommerceCodes;
-  IntegrationApiKeys = transbankSdk?.IntegrationApiKeys;
-  
-  console.log("Transbank SDK loaded:", {
-    hasOneClick: !!OneClick,
-    hasCommerceCodes: !!IntegrationCommerceCodes,
-    hasApiKeys: !!IntegrationApiKeys,
-    oneClickMethods: OneClick ? Object.getOwnPropertyNames(OneClick) : []
-  });
-} catch (error: any) {
-  console.error("Failed to load Transbank SDK:", error);
-  console.error("Error details:", {
-    message: error?.message,
-    stack: error?.stack,
-    code: error?.code
-  });
-}
+// Import Transbank SDK
+import { Oneclick, IntegrationCommerceCodes, IntegrationApiKeys, TransactionDetail } from "transbank-sdk";
 import { TRANSBANK_TEST_CONFIG } from "../config/test-credentials";
 
 export class TransbankProvider {
@@ -56,7 +31,7 @@ export class TransbankProvider {
 
   initialize(config: Record<string, any>): void {
     // Check if Transbank SDK is available
-    if (!OneClick) {
+    if (!Oneclick) {
       throw new PaymentGatewayError(
         "Transbank SDK is not available. Please ensure transbank-sdk package is installed.",
         "SDK_NOT_AVAILABLE"
@@ -92,15 +67,15 @@ export class TransbankProvider {
 
     // Configure Transbank SDK
     try {
-      if (!OneClick.configureForIntegration) {
-        throw new Error("OneClick.configureForIntegration method is not available");
+      if (!Oneclick.configureForIntegration) {
+        throw new Error("Oneclick.configureForIntegration method is not available");
       }
 
       if (this.environment === "production") {
-        OneClick.configureForProduction(this.commerceCode, this.apiKey);
+        Oneclick.configureForProduction(this.commerceCode, this.apiKey);
       } else {
         // Use integration configuration with default values
-        OneClick.configureForIntegration(
+        Oneclick.configureForIntegration(
           this.commerceCode,
           this.apiKey
         );
@@ -117,7 +92,7 @@ export class TransbankProvider {
 
   async tokenizeDirect(_request: DirectTokenizationRequest): Promise<TokenizationSuccessResponse> {
     throw new PaymentGatewayError(
-      "Transbank OneClick requires redirect tokenization",
+      "Transbank Oneclick requires redirect tokenization",
       "METHOD_NOT_SUPPORTED"
     );
   }
@@ -127,10 +102,11 @@ export class TransbankProvider {
   ): Promise<RedirectTokenizationResponse> {
     try {
       const username = `user_${request.user_id}_${Date.now()}`;
-      const email = request.metadata?.email || `${username}@example.com`;
+      const email = (request.metadata?.email as string) || `${username}@example.com`;
 
-      // Create inscription with Transbank OneClick
-      const response = await OneClick.MallInscription.start(
+      // Create inscription with Transbank Oneclick
+      const mallInscription = new Oneclick.MallInscription(Oneclick.getDefaultOptions());
+      const response = await mallInscription.start(
         username,
         email,
         request.return_url
@@ -193,7 +169,8 @@ export class TransbankProvider {
 
       // Complete inscription with Transbank
       const token = callbackData.TBK_TOKEN || session.token;
-      const response = await OneClick.MallInscription.finish(token);
+      const mallInscription = new Oneclick.MallInscription(Oneclick.getDefaultOptions());
+      const response = await mallInscription.finish(token);
 
       if (response.responseCode !== 0) {
         throw new PaymentGatewayError(
@@ -210,15 +187,15 @@ export class TransbankProvider {
         card_holder_name: session.email,
         card_last_four: response.cardDetail?.cardNumber?.slice(-4) || "****",
         card_brand: this.mapTransbankCardType(response.cardDetail?.cardNumber),
-        card_type: "credit", // Transbank doesn't distinguish in OneClick
-        expiration_month: 12, // Transbank doesn't provide expiration in OneClick
+        card_type: "credit", // Transbank doesn't distinguish in Oneclick
+        expiration_month: 12, // Transbank doesn't provide expiration in Oneclick
         expiration_year: 2099,
         is_default: session.set_as_default || false,
         payment_token: response.tbkUser,
-        // Transbank OneClick tokens pueden requerir renovación periódica
+        // Transbank Oneclick tokens pueden requerir renovación periódica
         // Típicamente duran 1 año desde la inscripción
         token_expires_at: Timestamp.fromDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
-        // Transbank NO requiere CVC para pagos OneClick
+        // Transbank NO requiere CVC para pagos Oneclick
         requires_cvv_for_payments: false,
         created_at: Timestamp.now(),
         updated_at: Timestamp.now(),
@@ -300,18 +277,19 @@ export class TransbankProvider {
         throw new PaymentGatewayError("Invalid payment token", "INVALID_TOKEN");
       }
 
-      // Process payment with Transbank OneClick
-      const response = await OneClick.MallTransaction.authorize(
+      // Process payment with Transbank Oneclick
+      const mallTransaction = new Oneclick.MallTransaction(Oneclick.getDefaultOptions());
+      const response = await mallTransaction.authorize(
         payment.user_id, // username
         tbkUser,
         payment.payment_id, // buyOrder
         [
-          {
-            commerce_code: this.commerceCode,
-            buy_order: payment.payment_id,
-            amount: Math.round(payment.amount),
-            installments_number: 1,
-          },
+          new TransactionDetail(
+            Math.round(payment.amount),
+            this.commerceCode,
+            payment.payment_id,
+            1
+          ),
         ]
       );
 
@@ -376,7 +354,8 @@ export class TransbankProvider {
       }
 
       // Process refund with Transbank
-      const response = await OneClick.MallTransaction.refund(
+      const mallTransaction = new Oneclick.MallTransaction(Oneclick.getDefaultOptions());
+      const response = await mallTransaction.refund(
         paymentData.transaction_id, // token from original transaction
         paymentData.payment_id, // buyOrder
         this.commerceCode,
@@ -401,7 +380,8 @@ export class TransbankProvider {
   async getPaymentStatus(providerPaymentId: string): Promise<Payment> {
     try {
       // Get payment status from Transbank
-      const response = await OneClick.MallTransaction.status(providerPaymentId);
+      const mallTransaction = new Oneclick.MallTransaction(Oneclick.getDefaultOptions());
+      const response = await mallTransaction.status(providerPaymentId);
       
       return {
         payment_id: response.buy_order || "",
