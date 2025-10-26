@@ -193,6 +193,8 @@ export class TransbankProvider {
       const mallInscription = new Oneclick.MallInscription(Oneclick.getDefaultOptions());
       const response = await mallInscription.finish(token);
 
+      console.log("Transbank inscription completion response:", response);
+      
       if (response.responseCode !== 0) {
         throw new PaymentGatewayError(
           `Transbank inscription failed: ${response.responseCode}`,

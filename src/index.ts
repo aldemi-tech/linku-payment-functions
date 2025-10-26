@@ -214,6 +214,7 @@ export const paymentTokenizeCardDirect = functions.https.onRequest(
 export const paymentCreateTokenizationSession = functions.https.onRequest(
   async (req, res) => {
     try {
+      console.log("Received tokenization session request", req.body, req.headers);
       // Validate request method
       if (req.method !== 'POST') {
         res.status(405).json({ 
