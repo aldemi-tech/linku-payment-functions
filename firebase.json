@@ -3,6 +3,7 @@
     "source": ".",
     "predeploy": [
       "npm run lint",
+      "npm run test",
       "npm run build"
     ],
     "runtime": "nodejs20"

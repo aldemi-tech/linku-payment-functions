@@ -122,7 +122,7 @@ export const createTokenizationSession = async (req: Request, res: Response) => 
  */
 const completeTokenizationBase = async (req: Request, res: Response, provider: PaymentProvider) => {
   try {
-    console.log("Received complete tokenization request", req.body, req.headers, req.method);
+    console.log("Received complete tokenization request", req.body, req.params, req.headers, req.method);
 
     // Validate request method
     if (req.method !== 'POST' && req.method !== 'GET') {
@@ -136,7 +136,7 @@ const completeTokenizationBase = async (req: Request, res: Response, provider: P
     // Validate authentication and user agent
     const { metadata } = await validateRequestCallbacks(req);
     const data = req.params as { TBK_ID_SESION: string; TBK_ORDEN_COMPRA: string; TBK_TOKEN: string };
-
+    console.log("Complete tokenization data", data);
     // Use service to handle business logic
     const result = await TokenizationService.completeTokenization(
       data.TBK_TOKEN,

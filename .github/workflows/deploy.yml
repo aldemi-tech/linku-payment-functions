@@ -24,16 +24,7 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
 
-      - name: 🧹 Run Linter
-        run: npm run lint
-
-      - name: 🧪 Run Tests
-        run: npm test
-
-      - name: 🔨 Build Functions
-        run: npm run build
-
-      - name: 🚀 Deploy to Firebase
+      - name: 🚀 Build and deploy to Firebase
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
