@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import express from "express";
 import {
     DirectTokenizationRequest,
     RedirectTokenizationRequest,
@@ -8,8 +9,7 @@ import {
 } from "../types";
 import { validateRequest } from "../utils";
 import { TokenizationService } from "../services/tokenization.service";
-import express from "express";
-import { PaymentProviderFactory } from "@/providers/factory";
+import { PaymentProviderFactory } from "../providers/factory";
 
 const handleError = (error: any): PaymentGatewayError => {
     if (error instanceof PaymentGatewayError) {
@@ -122,14 +122,13 @@ export const createTokenizationSession = async (req: Request, res: Response) => 
 /**
  * Completa el proceso de tokenización
  */
-
-
-
 export const completeTokenization = express();
 completeTokenization.use(express.json()); // importante para leer req.body
-completeTokenization.post("/:provider", async (req, res) => {
+completeTokenization.post("/:provider", async (req: Request, res: Response) => {
     try {
-        const provider = req.params.provider.toLowerCase() as PaymentProvider;
+
+        console.log("Received tokenization completion request", req.body, req.headers, req.params);
+        const provider = req.params.provider?.toLowerCase() as PaymentProvider;
 
         if (!["stripe", "transbank", "mercadopago"].includes(provider)) {
             return res.status(400).json({
@@ -163,59 +162,9 @@ completeTokenization.post("/:provider", async (req, res) => {
         });
     } catch (error: any) {
         console.error("Webhook error:", error);
-        return res.status(500).json({ error: "Webhook processing failed", message: error.message });
+        return res.status(500).json({ 
+            error: "Webhook processing failed", 
+            message: error.message 
+        });
     }
 });
-
-/*
-export const completeTokenization = async (req: Request, res: Response) => {
-  try {
-    console.log("Received complete tokenization request", req.body, req.headers, req.method);
-
-    const pathParts = req.path.split("/");
-    const providerRequest = pathParts.at(-1)?.toLowerCase();
-
-    // Validate provider from path
-    TokenizationService.validateProvider(providerRequest);
-    
-    // Validate request method
-    if (req.method !== 'POST') {
-      res.status(405).json({ 
-        success: false, 
-        error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST method is allowed' } 
-      });
-      return;
-    }
-
-    // Validate authentication and user agent
-    const { user, metadata } = await validateRequest(req);
-    const data: { session_id: string; callback_data: any; provider: PaymentProvider } = req.body;
-
-    // Use service to handle business logic
-    const result = await TokenizationService.completeTokenization(
-      data.session_id,
-      data.callback_data,
-      data.provider,
-      user.uid,
-      metadata
-    );
-
-    const response: ApiResponse = {
-      success: true,
-      data: result,
-    };
-
-    res.status(200).json(response);
-  } catch (error: any) {
-    const gatewayError = handleError(error);
-    const response: ApiResponse = {
-      success: false,
-      error: {
-        code: gatewayError.code,
-        message: gatewayError.message,
-        details: gatewayError.details,
-      },
-    };
-    res.status(gatewayError.statusCode || 500).json(response);
-  }
-};*/
