@@ -104,21 +104,21 @@ export class TokenizationService {
    * Completa el proceso de tokenización
    */
   static async completeTokenization(
-    token: string,
+    session_id: string,
     callbackData: any,
     provider: PaymentProvider,
     metadata: any
   ) {
     console.log("Complete tokenization called with", {
-      token,
+      session_id,
       callbackData,
       provider,
       metadata,
     });
-    validateRequiredFields({ token, provider }, ["token", "provider"]);
+    validateRequiredFields({ session_id, provider }, ["session_id", "provider"]);
 
     console.log("Completing tokenization", {
-      token: token,
+      session_id: session_id,
       provider: provider,
       metadata: metadata,
     });
@@ -126,7 +126,7 @@ export class TokenizationService {
     // Verify session belongs to authenticated user
     const sessionQuery = await db
       .collection("tokenization_sessions")
-      .where("token", "==", token)
+      .where("session_id", "==", session_id)
       .limit(1)
       .get();
 
@@ -141,7 +141,7 @@ export class TokenizationService {
     }
 
     const paymentProvider = PaymentProviderFactory.getProvider(provider);
-    const result = await paymentProvider.completeTokenization(token, callbackData);
+    const result = await paymentProvider.completeTokenization(session_id, callbackData);
 
     // Update session with completion metadata
     await sessionDoc.ref.update({

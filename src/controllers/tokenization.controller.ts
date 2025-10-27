@@ -139,7 +139,7 @@ const completeTokenizationBase = async (req: Request, res: Response, provider: P
     console.log("Complete tokenization data", data);
     // Use service to handle business logic
     const result = await TokenizationService.completeTokenization(
-      data.TBK_TOKEN,
+      `tbk_${data.TBK_TOKEN}`,
       data,
       provider,
       metadata
