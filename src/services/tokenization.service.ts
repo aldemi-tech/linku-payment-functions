@@ -85,7 +85,7 @@ export class TokenizationService {
 
     // Save tokenization session with metadata
     if (result.session_id) {
-      await db.collection("tokenization_sessions").add({
+      await db.collection("tokenization_sessions").doc(result.session_id).set({
         user_id: data.user_id,
         provider: data.provider,
         session_id: result.session_id,
@@ -153,7 +153,7 @@ export class TokenizationService {
 
     return result;
   }
-    
+
   /**
    * Valida que el proveedor sea válido para tokenización
    */
