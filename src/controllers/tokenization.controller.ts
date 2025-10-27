@@ -17,7 +17,7 @@ const handleError = (error: any): PaymentGatewayError => {
   return new PaymentGatewayError(
     "An unexpected error occurred",
     "INTERNAL_ERROR",
-    500,
+    error.statusCode || 500,
     error
   );
 };
