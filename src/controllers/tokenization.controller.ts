@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import express from "express";
 import {
     DirectTokenizationRequest,
     RedirectTokenizationRequest,
@@ -9,7 +8,6 @@ import {
 } from "../types";
 import { validateRequest } from "../utils";
 import { TokenizationService } from "../services/tokenization.service";
-import { PaymentProviderFactory } from "../providers/factory";
 
 const handleError = (error: any): PaymentGatewayError => {
     if (error instanceof PaymentGatewayError) {
@@ -120,51 +118,71 @@ export const createTokenizationSession = async (req: Request, res: Response) => 
 };
 
 /**
- * Completa el proceso de tokenización
+ * Función base para completar tokenización que puede ser reutilizada por proveedor
  */
-export const completeTokenization = express();
-completeTokenization.use(express.json()); // importante para leer req.body
-completeTokenization.post("/:provider", async (req: Request, res: Response) => {
-    try {
+const completeTokenizationBase = async (req: Request, res: Response, provider: PaymentProvider) => {
+  try {
+    console.log("Received complete tokenization request", req.body, req.headers, req.method);
 
-        console.log("Received tokenization completion request", req.body, req.headers, req.params);
-        const provider = req.params.provider?.toLowerCase() as PaymentProvider;
-
-        if (!["stripe", "transbank", "mercadopago"].includes(provider)) {
-            return res.status(400).json({
-                error: "Invalid provider. Use: /webhook/{stripe|transbank|mercadopago}",
-            });
-        }
-
-        if (!PaymentProviderFactory.isProviderAvailable(provider)) {
-            return res.status(400).json({
-                error: `Provider '${provider}' is not configured or available`,
-            });
-        }
-
-        const paymentProvider = PaymentProviderFactory.getProvider(provider);
-
-        if (provider === "stripe") {
-            const signature = req.headers["stripe-signature"] as string;
-            const payload = JSON.stringify(req.body);
-            if (!paymentProvider.verifyWebhook(payload, signature)) {
-                return res.status(401).json({ error: "Invalid signature" });
-            }
-        }
-
-        await paymentProvider.handleWebhook(req.body);
-
-        console.log(`${provider} webhook processed successfully`);
-        return res.status(200).json({
-            received: true,
-            provider,
-            timestamp: new Date().toISOString(),
-        });
-    } catch (error: any) {
-        console.error("Webhook error:", error);
-        return res.status(500).json({ 
-            error: "Webhook processing failed", 
-            message: error.message 
-        });
+    // Validate request method
+    if (req.method !== 'POST') {
+      res.status(405).json({ 
+        success: false, 
+        error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST method is allowed' } 
+      });
+      return;
     }
-});
+
+    // Validate authentication and user agent
+    const { user, metadata } = await validateRequest(req);
+    const data: { session_id: string; callback_data: any; provider: PaymentProvider } = req.body;
+
+    // Use service to handle business logic
+    const result = await TokenizationService.completeTokenization(
+      data.session_id,
+      data.callback_data,
+      provider,
+      user.uid,
+      metadata
+    );
+
+    const response: ApiResponse = {
+      success: true,
+      data: result,
+    };
+
+    res.status(200).json(response);
+  } catch (error: any) {
+    const gatewayError = handleError(error);
+    const response: ApiResponse = {
+      success: false,
+      error: {
+        code: gatewayError.code,
+        message: gatewayError.message,
+        details: gatewayError.details,
+      },
+    };
+    res.status(gatewayError.statusCode || 500).json(response);
+  }
+};
+
+/**
+ * Completa el proceso de tokenización para Stripe
+ */
+export const completeTokenizationStripe = async (req: Request, res: Response) => {
+  await completeTokenizationBase(req, res, "stripe");
+};
+
+/**
+ * Completa el proceso de tokenización para Transbank
+ */
+export const completeTokenizationTransbank = async (req: Request, res: Response) => {
+  await completeTokenizationBase(req, res, "transbank");
+};
+
+/**
+ * Completa el proceso de tokenización para MercadoPago
+ */
+export const completeTokenizationMercadoPago = async (req: Request, res: Response) => {
+  await completeTokenizationBase(req, res, "mercadopago");
+};

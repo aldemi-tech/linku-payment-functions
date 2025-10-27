@@ -12,14 +12,21 @@ import "./config/provider-config";
 // Import controllers
 import { 
   tokenizeCardDirect, 
-  createTokenizationSession, 
-  completeTokenization 
+  createTokenizationSession,
+  completeTokenizationStripe,
+  completeTokenizationTransbank,
+  completeTokenizationMercadoPago
 } from "./controllers/tokenization.controller";
 import { 
   processPayment, 
   refundPayment 
 } from "./controllers/payment.controller";
-import { handleWebhook } from "./controllers/webhook.controller";
+import { 
+  handleWebhook,
+  handleWebhookStripe,
+  handleWebhookTransbank,
+  handleWebhookMercadoPago
+} from "./controllers/webhook.controller";
 import { 
   getExecutionLocation, 
   getAvailableProviders 
@@ -43,9 +50,19 @@ export const paymentTokenizeCardDirect = functions.https.onRequest(tokenizeCardD
 export const paymentCreateTokenizationSession = functions.https.onRequest(createTokenizationSession);
 
 /**
- * Completa el proceso de tokenización
+ * Completa el proceso de tokenización para Stripe
  */
-export const paymentCompleteTokenization = functions.https.onRequest(completeTokenization);
+export const paymentCompleteTokenizationStripe = functions.https.onRequest(completeTokenizationStripe);
+
+/**
+ * Completa el proceso de tokenización para Transbank
+ */
+export const paymentCompleteTokenizationTransbank = functions.https.onRequest(completeTokenizationTransbank);
+
+/**
+ * Completa el proceso de tokenización para MercadoPago
+ */
+export const paymentCompleteTokenizationMercadoPago = functions.https.onRequest(completeTokenizationMercadoPago);
 
 // ==================== PAYMENT FUNCTIONS ====================
 
@@ -74,7 +91,22 @@ export const paymentGetAvailableProviders = functions.https.onRequest(getAvailab
 // ==================== WEBHOOK HANDLERS ====================
 
 /**
- * Unified webhook handler for all payment providers
+ * Webhook handler for Stripe
+ */
+export const paymentWebhookStripe = functions.https.onRequest(handleWebhookStripe);
+
+/**
+ * Webhook handler for Transbank
+ */
+export const paymentWebhookTransbank = functions.https.onRequest(handleWebhookTransbank);
+
+/**
+ * Webhook handler for MercadoPago
+ */
+export const paymentWebhookMercadoPago = functions.https.onRequest(handleWebhookMercadoPago);
+
+/**
+ * Unified webhook handler for all payment providers (mantener compatibilidad)
  * Route: /webhook/{provider} where provider is: stripe, transbank, mercadopago
  */
 export const paymentWebhook = functions.https.onRequest(handleWebhook);
