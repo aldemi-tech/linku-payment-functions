@@ -292,6 +292,7 @@ export const paymentCreateTokenizationSession = functions.https.onRequest(
 export const paymentCompleteTokenization = functions.https.onRequest(
   async (req, res) => {
     try {
+      console.log("Received complete tokenization request", req.body, req.headers, req.method);
       // Validate request method
       if (req.method !== 'POST') {
         res.status(405).json({ 
