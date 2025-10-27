@@ -92,6 +92,7 @@ export class TokenizationService {
         type: 'redirect',
         status: 'pending',
         return_url: data.return_url,
+        set_as_default: data.set_as_default || false,
         metadata: metadata,
         created_at: createTimestamp(),
       });

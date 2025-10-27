@@ -109,7 +109,7 @@ export class TransbankProvider {
         const hash = crypto.createHash('md5').update(username).digest('hex').substring(0, 8);
         username = username.substring(0, 31) + '_' + hash; // 31 + 1 + 8 = 40 chars max
       }
-      
+
       const email = (request.metadata?.email as string) || `${username}@example.com`;
 
       console.log("Transbank inscription details:", {
@@ -121,7 +121,7 @@ export class TransbankProvider {
 
       // Create inscription with Transbank Oneclick
       const mallInscription = new Oneclick.MallInscription(Oneclick.getDefaultOptions());
-      const response: {token: string, url_webpay: string} = await mallInscription.start(
+      const response: { token: string, url_webpay: string } = await mallInscription.start(
         username,
         email,
         request.return_url
@@ -150,7 +150,7 @@ export class TransbankProvider {
         expires_at: Timestamp.fromDate(new Date(Date.now() + 30 * 60 * 1000)), // 30 minutes
         metadata: request.metadata,
       };
-      
+
       console.log("Saving Transbank tokenization session:", sessionData);
 
       await admin.firestore().collection("tokenization_sessions").doc(sessionId).set(sessionData);
@@ -197,7 +197,7 @@ export class TransbankProvider {
       if (session.status === "completed") {
         throw new PaymentGatewayError("Session already completed successfully", "SESSION_ALREADY_COMPLETED");
       }
-      
+
       // Log retry attempt for failed sessions
       if (session.status === "failed") {
         console.log("Retrying failed tokenization session:", sessionId);
@@ -211,25 +211,40 @@ export class TransbankProvider {
       console.log("Transbank inscription completion response:", response);
 
       if (response.response_code !== 0) {
-        throw new PaymentGatewayError(
-          `Transbank inscription failed: ${response.response_code}`,
-          "INSCRIPTION_FAILED"
-        );
+        if (response.response_code === -96) {
+          throw new PaymentGatewayError(
+            `Transbank inscription cancelled: ${response.response_code}`,
+            "INSCRIPTION_CANCELLED",
+            409
+          );
+        } else {
+          throw new PaymentGatewayError(
+            `Transbank inscription failed: ${response.response_code}`,
+            "INSCRIPTION_FAILED",
+          );
+        }
       }
 
+      const user = await admin.firestore().collection("users").doc(session.user_id).get();
+
+      if (!user.exists) {
+        throw new PaymentGatewayError("User not found for tokenization session", "USER_NOT_FOUND");
+      }
+      
+      const userData = user.data();
       // Save to Firestore payment_cards
       const cardId = admin.firestore().collection("payment_cards").doc().id;
       const cardData: PaymentCard = {
         card_id: cardId,
         user_id: session.user_id,
-        card_holder_name: session.email,
-        card_last_four: response.cardDetail?.cardNumber?.slice(-4) || "****",
-        card_brand: this.mapTransbankCardType(response.cardDetail?.cardNumber),
+        card_holder_name: userData?.name || "N/A",
+        card_last_four: response.card_number.slice(-4) || "****",
+        card_brand: response.card_type,
         card_type: "credit", // Transbank doesn't distinguish in Oneclick
         expiration_month: 12, // Transbank doesn't provide expiration in Oneclick
         expiration_year: 2099,
         is_default: session.set_as_default || false,
-        payment_token: response.tbkUser,
+        payment_token: response.tbk_user,
         // Transbank Oneclick tokens pueden requerir renovación periódica
         // Típicamente duran 1 año desde la inscripción
         token_expires_at: Timestamp.fromDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
@@ -279,7 +294,7 @@ export class TransbankProvider {
       };
     } catch (error: any) {
       console.error("Transbank tokenization completion error:", error);
-      
+
       // Update session to failed with detailed error information
       try {
         await admin.firestore().collection("tokenization_sessions").doc(sessionId).update({
@@ -388,13 +403,13 @@ export class TransbankProvider {
     try {
       // Get payment details from Firestore
       const paymentDoc = await admin.firestore().collection("payments").doc(paymentId).get();
-      
+
       if (!paymentDoc.exists) {
         throw new PaymentGatewayError("Payment not found", "PAYMENT_NOT_FOUND");
       }
 
       const paymentData = paymentDoc.data() as Payment;
-      
+
       if (!paymentData.transaction_id) {
         throw new PaymentGatewayError("No transaction ID found for refund", "NO_TRANSACTION_ID");
       }
@@ -428,7 +443,7 @@ export class TransbankProvider {
       // Get payment status from Transbank
       const mallTransaction = new Oneclick.MallTransaction(Oneclick.getDefaultOptions());
       const response = await mallTransaction.status(providerPaymentId);
-      
+
       return {
         payment_id: response.buy_order || "",
         order_id: response.buy_order || "",
@@ -451,10 +466,10 @@ export class TransbankProvider {
 
   private mapTransbankCardType(cardNumber?: string): "visa" | "mastercard" | "amex" | "other" {
     if (!cardNumber) return "other";
-    
+
     const firstDigit = cardNumber.charAt(0);
     const firstTwoDigits = cardNumber.substring(0, 2);
-    
+
     if (firstDigit === "4") {
       return "visa";
     } else if (["51", "52", "53", "54", "55"].includes(firstTwoDigits)) {
@@ -462,7 +477,7 @@ export class TransbankProvider {
     } else if (["34", "37"].includes(firstTwoDigits)) {
       return "amex";
     }
-    
+
     return "other";
   }
 
