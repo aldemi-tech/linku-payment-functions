@@ -109,6 +109,12 @@ export class TokenizationService {
     provider: PaymentProvider,
     metadata: any
   ) {
+    console.log("Complete tokenization called with", {
+      token,
+      callbackData,
+      provider,
+      metadata,
+    });
     validateRequiredFields({ token, provider }, ["token", "provider"]);
 
     console.log("Completing tokenization", {
