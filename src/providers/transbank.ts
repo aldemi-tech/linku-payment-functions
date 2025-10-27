@@ -192,9 +192,15 @@ export class TransbankProvider {
         throw new PaymentGatewayError("Invalid session data", "INVALID_SESSION");
       }
       console.log("Transbank tokenization session data:", session);
+
+      // Allow retry if session is in failed state, but prevent if already completed
+      if (session.status === "completed") {
+        throw new PaymentGatewayError("Session already completed successfully", "SESSION_ALREADY_COMPLETED");
+      }
       
-      if (session.status !== "pending") {
-        throw new PaymentGatewayError("Session already processed", "SESSION_ALREADY_PROCESSED");
+      // Log retry attempt for failed sessions
+      if (session.status === "failed") {
+        console.log("Retrying failed tokenization session:", sessionId);
       }
 
       // Complete inscription with Transbank
@@ -204,9 +210,9 @@ export class TransbankProvider {
 
       console.log("Transbank inscription completion response:", response);
 
-      if (response.responseCode !== 0) {
+      if (response.response_code !== 0) {
         throw new PaymentGatewayError(
-          `Transbank inscription failed: ${response.responseCode}`,
+          `Transbank inscription failed: ${response.response_code}`,
           "INSCRIPTION_FAILED"
         );
       }
@@ -251,12 +257,16 @@ export class TransbankProvider {
         await batch.commit();
       }
 
-      // Update session status
+      // Update session status to completed
       await admin.firestore().collection("tokenization_sessions").doc(sessionId).update({
         status: "completed",
         token_id: response.tbkUser,
         completed_at: Timestamp.now(),
         card_detail: response.cardDetail,
+        // Clear any previous error information
+        error_message: admin.firestore.FieldValue.delete(),
+        error_code: admin.firestore.FieldValue.delete(),
+        error_details: admin.firestore.FieldValue.delete(),
       });
 
       return {
@@ -270,12 +280,16 @@ export class TransbankProvider {
     } catch (error: any) {
       console.error("Transbank tokenization completion error:", error);
       
-      // Update session to failed
+      // Update session to failed with detailed error information
       try {
         await admin.firestore().collection("tokenization_sessions").doc(sessionId).update({
           status: "failed",
           error_message: error.message,
-          completed_at: Timestamp.now(),
+          error_code: error.code || "UNKNOWN_ERROR",
+          error_details: error.details || null,
+          last_attempt_at: Timestamp.now(),
+          // Keep completed_at only if this is the final failure, not for retries
+          ...(error.code === "SESSION_ALREADY_COMPLETED" ? { completed_at: Timestamp.now() } : {})
         });
       } catch (updateError) {
         console.error("Failed to update session status:", updateError);

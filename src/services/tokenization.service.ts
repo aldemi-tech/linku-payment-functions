@@ -143,14 +143,9 @@ export class TokenizationService {
     const paymentProvider = PaymentProviderFactory.getProvider(provider);
     const result = await paymentProvider.completeTokenization(session_id, callbackData);
 
-    // Update session with completion metadata
-    await sessionDoc.ref.update({
-      status: 'completed',
-      completion_metadata: metadata,
-      completed_at: createTimestamp(),
-      token_id: result.token_id,
-    });
-
+    // Note: Session status update is handled by the individual provider
+    // Each provider manages its own completion logic and status updates
+    
     return result;
   }
 
