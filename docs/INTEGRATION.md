@@ -341,7 +341,7 @@ export const PaymentScreen = ({ route }: any) => {
             onPress={() => setSelectedCard(item)}
           >
             <Text>{item.card_brand.toUpperCase()}</Text>
-            <Text>**** {item.card_last4}</Text>
+            <Text>**** {item.card_last_four}</Text>
             <Text>{item.card_exp_month}/{item.card_exp_year}</Text>
           </TouchableOpacity>
         )}

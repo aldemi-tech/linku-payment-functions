@@ -135,6 +135,7 @@ export class MercadoPagoProvider {
         expiration_year: request.card_exp_year,
         is_default: request.set_as_default || false,
         payment_token: savedCard?.id || cardToken.id,
+        provider: this.name,
         // MercadoPago tokens pueden expirar según las políticas de seguridad
         // Típicamente son válidos por 6 meses a 1 año
         token_expires_at: Timestamp.fromDate(new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)), // 6 meses
@@ -164,10 +165,11 @@ export class MercadoPagoProvider {
 
       return {
         token_id: savedCard?.id || cardToken.id,
-        card_last4: cardToken.last_four_digits,
+        card_last_four: cardToken.last_four_digits,
         card_brand: cardToken.payment_method.id,
         card_exp_month: request.card_exp_month,
         card_exp_year: request.card_exp_year,
+        provider: this.name,
         is_default: request.set_as_default || false,
       };
     } catch (error: any) {
@@ -278,6 +280,7 @@ export class MercadoPagoProvider {
         expiration_year: Number.parseInt(cardInfo.expiration_year) || 0,
         is_default: payment.metadata?.set_as_default === "true",
         payment_token: payment.id.toString(),
+        provider: this.name,
         // MercadoPago tokens pueden expirar según las políticas de seguridad
         token_expires_at: Timestamp.fromDate(new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)), // 6 meses
         // MercadoPago SÍ requiere CVC para crear tokens en pagos futuros
@@ -306,11 +309,12 @@ export class MercadoPagoProvider {
 
       return {
         token_id: payment.id.toString(),
-        card_last4: cardInfo.last_four_digits || "",
+        card_last_four: cardInfo.last_four_digits || "",
         card_brand: payment.payment_method_id,
         card_exp_month: Number.parseInt(cardInfo.expiration_month) || 0,
         card_exp_year: Number.parseInt(cardInfo.expiration_year) || 0,
         is_default: cardData.is_default,
+        provider: this.name,
       };
     } catch (error: any) {
       console.error("MercadoPago tokenization completion error:", error);

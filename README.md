@@ -376,7 +376,7 @@ headers: {
   success: true,
   data: {
     token_id: string;
-    card_last4: string;
+    card_last_four: string;
     card_brand: string;
     card_exp_month: number;
     card_exp_year: number;
@@ -478,7 +478,7 @@ Linking.openURL(redirect_url);
   success: true,
   data: {
     token_id: string;
-    card_last4: string;
+    card_last_four: string;
     card_brand: string;
     card_exp_month: number;
     card_exp_year: number;
@@ -554,7 +554,7 @@ const result = await processPayment({
   data: {
     cards: Array<{
       token_id: string;
-      card_last4: string;
+      card_last_four: string;
       card_brand: string;
       card_exp_month: number;
       card_exp_year: number;
@@ -775,7 +775,7 @@ Tarjetas de prueba proporcionadas por Transbank
   token_id: string;
   user_id: string;
   provider: "stripe" | "transbank";
-  card_last4: string;
+  card_last_four: string;
   card_brand: string;
   card_exp_month: number;
   card_exp_year: number;

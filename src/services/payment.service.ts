@@ -217,7 +217,7 @@ export class PaymentService {
       token_id: paymentCard.payment_token || paymentCard.card_id,
       user_id: paymentCard.user_id,
       provider: provider as any,
-      card_last4: paymentCard.card_last_four,
+      card_last_four: paymentCard.card_last_four,
       card_brand: paymentCard.card_brand,
       card_exp_month: paymentCard.expiration_month,
       card_exp_year: paymentCard.expiration_year,

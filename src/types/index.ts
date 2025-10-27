@@ -59,7 +59,7 @@ export interface CardToken {
   token_id: string;
   user_id: string;
   provider: PaymentProvider;
-  card_last4: string;
+  card_last_four: string;
   card_brand: string; // visa, mastercard, amex, etc.
   card_exp_month: number;
   card_exp_year: number;
@@ -167,7 +167,7 @@ export type PaymentStatus =
   | "refunded";
 
 export interface PaymentMethodDetails {
-  card_last4: string;
+  card_last_four: string;
   card_brand: string;
   card_exp_month: number;
   card_exp_year: number;

@@ -104,6 +104,7 @@ export class StripeProvider {
         expiration_month: paymentMethod.card?.exp_month || 0,
         expiration_year: paymentMethod.card?.exp_year || 0,
         is_default: request.set_as_default || false,
+        provider: this.name,
         payment_token: paymentMethod.id,
         // Stripe tokens no expiran, pero se pueden revocar
         token_expires_at: undefined,
@@ -133,11 +134,12 @@ export class StripeProvider {
 
       return {
         token_id: paymentMethod.id,
-        card_last4: paymentMethod.card?.last4 || "",
+        card_last_four: paymentMethod.card?.last4 || "",
         card_brand: paymentMethod.card?.brand || "",
         card_exp_month: paymentMethod.card?.exp_month || 0,
         card_exp_year: paymentMethod.card?.exp_year || 0,
         is_default: request.set_as_default || false,
+        provider: this.name,
       };
     } catch (error: any) {
       console.error("Stripe tokenization error:", error);
@@ -217,6 +219,7 @@ export class StripeProvider {
         expiration_year: paymentMethod.card?.exp_year || 0,
         is_default: setAsDefault,
         payment_token: paymentMethod.id,
+        provider: this.name,
         // Stripe tokens no expiran, pero se pueden revocar
         token_expires_at: undefined,
         // Stripe no requiere CVC para pagos futuros con saved cards
@@ -245,11 +248,12 @@ export class StripeProvider {
 
       return {
         token_id: paymentMethod.id,
-        card_last4: paymentMethod.card?.last4 || "",
+        card_last_four: paymentMethod.card?.last4 || "",
         card_brand: paymentMethod.card?.brand || "",
         card_exp_month: paymentMethod.card?.exp_month || 0,
         card_exp_year: paymentMethod.card?.exp_year || 0,
         is_default: setAsDefault,
+        provider: this.name,
       };
     } catch (error: any) {
       console.error("Stripe tokenization completion error:", error);

@@ -487,24 +487,7 @@ export class TransbankProvider {
       );
     }
   }
-
-  private mapTransbankCardType(cardNumber?: string): "visa" | "mastercard" | "amex" | "other" {
-    if (!cardNumber) return "other";
-
-    const firstDigit = cardNumber.charAt(0);
-    const firstTwoDigits = cardNumber.substring(0, 2);
-
-    if (firstDigit === "4") {
-      return "visa";
-    } else if (["51", "52", "53", "54", "55"].includes(firstTwoDigits)) {
-      return "mastercard";
-    } else if (["34", "37"].includes(firstTwoDigits)) {
-      return "amex";
-    }
-
-    return "other";
-  }
-
+  
   private mapTransbankStatus(status: string): "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded" {
     switch (status) {
       case "AUTHORIZED":
