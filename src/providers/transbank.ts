@@ -230,10 +230,32 @@ export class TransbankProvider {
       if (!user.exists) {
         throw new PaymentGatewayError("User not found for tokenization session", "USER_NOT_FOUND");
       }
-      
+
       const userData = user.data();
       // Save to Firestore payment_cards
       const cardId = admin.firestore().collection("payment_cards").doc().id;
+
+      const existsCardData = await admin.firestore()
+        .collection("payment_cards")
+        .where("payment_token", "==", response.tbk_user)
+        .where("provider", "==", this.name)
+        .where("user_id", "==", session.user_id)
+        .limit(1)
+        .get();
+      if (!existsCardData.empty) {
+        // Card already exists, no need to create a new one
+        console.log("Payment card already exists for user:", session.user_id);
+        return {
+          token_id: response.tbk_user,
+          card_last_four: response.card_number.slice(-4) || "****",
+          card_brand: response.card_type,
+          provider: this.name,
+          card_exp_month: 12,
+          card_exp_year: 2099,
+          is_default: session.set_as_default || false,
+        };
+      }
+
       const cardData: PaymentCard = {
         card_id: cardId,
         user_id: session.user_id,
@@ -241,6 +263,7 @@ export class TransbankProvider {
         card_last_four: response.card_number.slice(-4) || "****",
         card_brand: response.card_type,
         card_type: "credit", // Transbank doesn't distinguish in Oneclick
+        provider: this.name,
         expiration_month: 12, // Transbank doesn't provide expiration in Oneclick
         expiration_year: 2099,
         is_default: session.set_as_default || false,
@@ -275,9 +298,9 @@ export class TransbankProvider {
       // Update session status to completed
       await admin.firestore().collection("tokenization_sessions").doc(sessionId).update({
         status: "completed",
-        token_id: response.tbkUser,
+        token_id: response.tbk_user,
         completed_at: Timestamp.now(),
-        card_detail: response.cardDetail,
+        card_detail: response,
         // Clear any previous error information
         error_message: admin.firestore.FieldValue.delete(),
         error_code: admin.firestore.FieldValue.delete(),
@@ -285,9 +308,10 @@ export class TransbankProvider {
       });
 
       return {
-        token_id: response.tbkUser,
-        card_last4: response.cardDetail?.cardNumber?.slice(-4) || "****",
-        card_brand: this.mapTransbankCardType(response.cardDetail?.cardNumber) || "other",
+        token_id: response.tbk_user,
+        card_last_four: response.card_number.slice(-4) || "****",
+        card_brand: response.card_type,
+        provider: this.name,
         card_exp_month: 12,
         card_exp_year: 2099,
         is_default: session.set_as_default || false,

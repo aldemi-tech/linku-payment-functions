@@ -39,6 +39,7 @@ export interface PaymentCard {
   card_last_four: string;
   card_brand: 'visa' | 'mastercard' | 'amex' | 'other';
   card_type: 'credit' | 'debit';
+  provider: PaymentProvider;
   expiration_month: number;
   expiration_year: number;
   alias?: string; // Nombre personalizado para identificar la tarjeta
@@ -216,9 +217,10 @@ export interface ApiResponse<T = unknown> {
 
 export interface TokenizationSuccessResponse {
   token_id: string;
-  card_last4: string;
+  card_last_four: string;
   card_brand: string;
   card_exp_month: number;
+  provider: PaymentProvider;
   card_exp_year: number;
   is_default: boolean;
 }
