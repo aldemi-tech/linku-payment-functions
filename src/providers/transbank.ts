@@ -191,7 +191,8 @@ export class TransbankProvider {
       if (!session) {
         throw new PaymentGatewayError("Invalid session data", "INVALID_SESSION");
       }
-
+      console.log("Transbank tokenization session data:", session);
+      
       if (session.status !== "pending") {
         throw new PaymentGatewayError("Session already processed", "SESSION_ALREADY_PROCESSED");
       }
