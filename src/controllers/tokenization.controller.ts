@@ -1,120 +1,120 @@
 import { Request, Response } from "express";
 import {
-    DirectTokenizationRequest,
-    RedirectTokenizationRequest,
-    PaymentProvider,
-    ApiResponse,
-    PaymentGatewayError,
+  DirectTokenizationRequest,
+  RedirectTokenizationRequest,
+  PaymentProvider,
+  ApiResponse,
+  PaymentGatewayError,
 } from "../types";
-import { validateRequest } from "../utils";
+import { validateRequest, validateRequestCallbacks } from "../utils";
 import { TokenizationService } from "../services/tokenization.service";
 
 const handleError = (error: any): PaymentGatewayError => {
-    if (error instanceof PaymentGatewayError) {
-        return error;
-    }
-    console.error("Unexpected error:", error);
-    return new PaymentGatewayError(
-        "An unexpected error occurred",
-        "INTERNAL_ERROR",
-        500,
-        error
-    );
+  if (error instanceof PaymentGatewayError) {
+    return error;
+  }
+  console.error("Unexpected error:", error);
+  return new PaymentGatewayError(
+    "An unexpected error occurred",
+    "INTERNAL_ERROR",
+    500,
+    error
+  );
 };
 
 /**
  * Tokeniza una tarjeta directamente sin sesión
  */
 export const tokenizeCardDirect = async (req: Request, res: Response) => {
-    try {
-        // Validate request method
-        if (req.method !== 'POST') {
-            res.status(405).json({
-                success: false,
-                error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST method is allowed' }
-            });
-            return;
-        }
-
-        // Validate authentication and user agent
-        const { user, metadata } = await validateRequest(req);
-        const data: DirectTokenizationRequest = req.body;
-
-        // Validate user_id matches authenticated user
-        if (data.user_id !== user.uid) {
-            throw new PaymentGatewayError("Unauthorized", "UNAUTHORIZED", 403);
-        }
-
-        // Use service to handle business logic
-        const result = await TokenizationService.tokenizeDirect(data, metadata);
-
-        const response: ApiResponse = {
-            success: true,
-            data: result,
-        };
-
-        res.status(200).json(response);
-    } catch (error: any) {
-        const gatewayError = handleError(error);
-        const response: ApiResponse = {
-            success: false,
-            error: {
-                code: gatewayError.code,
-                message: gatewayError.message,
-                details: gatewayError.details,
-            },
-        };
-        res.status(gatewayError.statusCode || 500).json(response);
+  try {
+    // Validate request method
+    if (req.method !== 'POST') {
+      res.status(405).json({
+        success: false,
+        error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST method is allowed' }
+      });
+      return;
     }
+
+    // Validate authentication and user agent
+    const { user, metadata } = await validateRequest(req);
+    const data: DirectTokenizationRequest = req.body;
+
+    // Validate user_id matches authenticated user
+    if (data.user_id !== user.uid) {
+      throw new PaymentGatewayError("Unauthorized", "UNAUTHORIZED", 403);
+    }
+
+    // Use service to handle business logic
+    const result = await TokenizationService.tokenizeDirect(data, metadata);
+
+    const response: ApiResponse = {
+      success: true,
+      data: result,
+    };
+
+    res.status(200).json(response);
+  } catch (error: any) {
+    const gatewayError = handleError(error);
+    const response: ApiResponse = {
+      success: false,
+      error: {
+        code: gatewayError.code,
+        message: gatewayError.message,
+        details: gatewayError.details,
+      },
+    };
+    res.status(gatewayError.statusCode || 500).json(response);
+  }
 };
 
 /**
  * Crea una sesión de tokenización
  */
 export const createTokenizationSession = async (req: Request, res: Response) => {
-    try {
-        console.log("Received tokenization session request", req.body, req.headers);
-        // Validate request method
-        if (req.method !== 'POST') {
-            res.status(405).json({
-                success: false,
-                error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST method is allowed' }
-            });
-            return;
-        }
-
-        // Validate authentication and user agent
-        const { user, metadata } = await validateRequest(req);
-        const data: RedirectTokenizationRequest = req.body;
-
-        console.log("Create tokenization session request", data, req.headers);
-
-        // Validate user_id matches authenticated user
-        if (data.user_id !== user.uid) {
-            throw new PaymentGatewayError("Unauthorized", "UNAUTHORIZED", 403);
-        }
-
-        // Use service to handle business logic
-        const result = await TokenizationService.createSession(data, metadata);
-
-        const response: ApiResponse = {
-            success: true,
-            data: result,
-        };
-
-        res.status(200).json(response);
-    } catch (error: any) {
-        const gatewayError = handleError(error);
-        const response: ApiResponse = {
-            success: false,
-            error: {
-                code: gatewayError.code,
-                message: gatewayError.message,
-                details: gatewayError.details,
-            },
-        };
-        res.status(gatewayError.statusCode || 500).json(response);
+  try {
+    console.log("Received tokenization session request", req.body, req.headers);
+    // Validate request method
+    if (req.method !== 'POST') {
+      res.status(405).json({
+        success: false,
+        error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST method is allowed' }
+      });
+      return;
     }
+
+    // Validate authentication and user agent
+    const { user, metadata } = await validateRequest(req);
+    const data: RedirectTokenizationRequest = req.body;
+
+    console.log("Create tokenization session request", data, req.headers);
+
+    // Validate user_id matches authenticated user
+    if (data.user_id !== user.uid) {
+      throw new PaymentGatewayError("Unauthorized", "UNAUTHORIZED", 403);
+    }
+
+    // Use service to handle business logic
+    const result = await TokenizationService.createSession(data, metadata);
+
+    const response: ApiResponse = {
+      success: true,
+      data: result,
+    };
+
+    res.status(200).json(response);
+  } catch (error: any) {
+    const gatewayError = handleError(error);
+    const response: ApiResponse = {
+      success: false,
+      error: {
+        code: gatewayError.code,
+        message: gatewayError.message,
+        details: gatewayError.details,
+      },
+    };
+    res.status(gatewayError.statusCode || 500).json(response);
+  }
 };
 
 /**
@@ -125,24 +125,23 @@ const completeTokenizationBase = async (req: Request, res: Response, provider: P
     console.log("Received complete tokenization request", req.body, req.headers, req.method);
 
     // Validate request method
-    if (req.method !== 'POST') {
-      res.status(405).json({ 
-        success: false, 
-        error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST method is allowed' } 
+    if (req.method !== 'POST' && req.method !== 'GET') {
+      res.status(405).json({
+        success: false,
+        error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST and GET methods are allowed' }
       });
       return;
     }
 
     // Validate authentication and user agent
-    const { user, metadata } = await validateRequest(req);
-    const data: { session_id: string; callback_data: any; provider: PaymentProvider } = req.body;
+    const { metadata } = await validateRequestCallbacks(req);
+    const data = req.params as { TBK_ID_SESION: string; TBK_ORDEN_COMPRA: string; TBK_TOKEN: string };
 
     // Use service to handle business logic
     const result = await TokenizationService.completeTokenization(
-      data.session_id,
-      data.callback_data,
+      data.TBK_TOKEN,
+      data,
       provider,
-      user.uid,
       metadata
     );
 
@@ -153,6 +152,7 @@ const completeTokenizationBase = async (req: Request, res: Response, provider: P
 
     res.status(200).json(response);
   } catch (error: any) {
+    console.error("Error completing tokenization:", error);
     const gatewayError = handleError(error);
     const response: ApiResponse = {
       success: false,

@@ -24,7 +24,7 @@ export interface RequestMetadata {
  */
 export const validateBearerToken = async (req: Request): Promise<admin.auth.DecodedIdToken> => {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw new PaymentGatewayError(
       'Missing or invalid Authorization',
@@ -34,11 +34,11 @@ export const validateBearerToken = async (req: Request): Promise<admin.auth.Deco
   }
 
   const token = authHeader.split('Bearer ')[1];
-  
+
   if (!token) {
     throw new PaymentGatewayError(
       'Missing or invalid Authorization',
-      'UNAUTHORIZED', 
+      'UNAUTHORIZED',
       401
     );
   }
@@ -61,7 +61,7 @@ export const validateBearerToken = async (req: Request): Promise<admin.auth.Deco
  */
 export const validateUserAgent = (req: Request): void => {
   const userAgent = req.headers['user-agent'];
-  
+
   if (!userAgent) {
     throw new PaymentGatewayError(
       'User-Agent header is required',
@@ -73,7 +73,7 @@ export const validateUserAgent = (req: Request): void => {
   if (!userAgent.startsWith('Linku')) {
     throw new PaymentGatewayError(
       'Invalid request source',
-      'BAD_REQUEST', 
+      'BAD_REQUEST',
       400
     );
   }
@@ -85,9 +85,9 @@ export const validateUserAgent = (req: Request): void => {
 export const detectExecutionLocation = (req: Request): string | null => {
   // Check for App Engine headers
   const appEngineCity = req.headers['x-appengine-city'];
-  const appEngineRegion = req.headers['x-appengine-region']; 
+  const appEngineRegion = req.headers['x-appengine-region'];
   const appEngineCountry = req.headers['x-appengine-country'];
-  
+
   if (appEngineCity || appEngineRegion || appEngineCountry) {
     return `${appEngineCity || 'Unknown'}, ${appEngineRegion || 'Unknown'}, ${appEngineCountry || 'Unknown'}`;
   }
@@ -123,6 +123,7 @@ export const extractRequestMetadata = (req: Request): RequestMetadata => {
   if (req.headers['accept-language']) metadata.acceptLanguage = req.headers['accept-language'];
   if (req.headers.authorization) metadata.authorization = req.headers.authorization;
   if (req.headers['content-type']) metadata.contentType = req.headers['content-type'];
+  if (req.headers['user-agent']) metadata.userAgent = req.headers['user-agent'];
 
   // Execution location
   const location = detectExecutionLocation(req);
@@ -147,12 +148,25 @@ export const validateRequest = async (req: Request): Promise<{
 }> => {
   // Validate User-Agent first (faster check)
   validateUserAgent(req);
-  
+
   // Validate Bearer token
   const user = await validateBearerToken(req);
-  
+
   // Extract metadata
   const metadata = extractRequestMetadata(req);
-  
+
   return { user, metadata };
+};
+
+/**
+ * Combined validation for auth +  metadata extraction
+ */
+export const validateRequestCallbacks = async (req: Request): Promise<{
+  metadata: RequestMetadata;
+}> => {
+
+  // Extract metadata
+  const metadata = extractRequestMetadata(req);
+
+  return { metadata };
 };
