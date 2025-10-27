@@ -293,6 +293,20 @@ export const paymentCompleteTokenization = functions.https.onRequest(
   async (req, res) => {
     try {
       console.log("Received complete tokenization request", req.body, req.headers, req.method);
+
+      const pathParts = req.path.split("/");
+      const providerRequest = pathParts.at(-1)?.toLowerCase();
+
+      if (
+        !providerRequest ||
+        !["stripe", "transbank", "mercadopago"].includes(providerRequest)
+      ) {
+        res.status(400).json({
+          error: "Invalid provider. Use: {stripe|transbank|mercadopago}",
+        });
+        return;
+      }
+      
       // Validate request method
       if (req.method !== 'POST') {
         res.status(405).json({ 
