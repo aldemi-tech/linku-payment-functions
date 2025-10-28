@@ -38,7 +38,7 @@ export interface PaymentCard {
   card_holder_name: string;
   card_last_four: string;
   card_brand: 'visa' | 'mastercard' | 'amex' | 'other';
-  card_type: 'credit' | 'debit';
+  card_type: 'credit' | 'debit' | 'prepaid' | 'other';
   provider: PaymentProvider;
   expiration_month: number | null;
   expiration_year: number | null;
@@ -46,6 +46,7 @@ export interface PaymentCard {
   is_default: boolean;
   // Token del procesador de pagos (ej: Stripe, MercadoPago)
   payment_token?: string;
+  authorization_code: string | null;
   // Expiración del token (suscripción)
   token_expires_at?: Timestamp;
   // Indica si requiere CVC para pagos futuros
