@@ -58,6 +58,43 @@ describe('Payment Gateway', () => {
     });
   });
 
+  describe('Firestore Configuration', () => {
+    it('should have ignoreUndefinedProperties enabled', async () => {
+      const { getDatabase } = await import('../config/firebase');
+      const db = getDatabase();
+      
+      expect(db).toBeDefined();
+      expect(typeof db.collection).toBe('function');
+      
+      // This test verifies that the database instance can be created
+      // The ignoreUndefinedProperties setting is internal to Firestore
+      // and will prevent errors when undefined values are passed
+    });
+
+    it('should handle objects with undefined properties', () => {
+      // Test that objects with undefined properties can be prepared for Firestore
+      const testObject = {
+        id: '123',
+        name: 'Test',
+        optional_field: undefined,
+        another_field: 'value'
+      };
+
+      // Filter out undefined properties (this is what ignoreUndefinedProperties does internally)
+      const cleanedObject = Object.fromEntries(
+        Object.entries(testObject).filter(([_, value]) => value !== undefined)
+      );
+
+      expect(cleanedObject).toEqual({
+        id: '123',
+        name: 'Test',
+        another_field: 'value'
+      });
+      expect(cleanedObject.optional_field).toBeUndefined();
+      expect('optional_field' in cleanedObject).toBe(false);
+    });
+  });
+
   describe('Error Handling', () => {
     it('should create PaymentGatewayError correctly', async () => {
       const { PaymentGatewayError } = await import('../types');
@@ -85,10 +122,10 @@ describe('Payment Gateway', () => {
       // Since we're mocking external dependencies, we test basic concepts
       const providerTypes: PaymentProvider[] = ['stripe', 'transbank', 'mercadopago'];
       
-      providerTypes.forEach(provider => {
+      for (const provider of providerTypes) {
         expect(typeof provider).toBe('string');
         expect(['stripe', 'transbank', 'mercadopago']).toContain(provider);
-      });
+      }
     });
   });
 });

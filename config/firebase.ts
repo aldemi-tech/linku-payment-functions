@@ -12,7 +12,14 @@ const firebaseApp: App = getApps().length > 0 ? getApps()[0] : initializeApp();
  * Get Firestore database instance
  */
 export function getDatabase(): Firestore {
-  return getFirestore(firebaseApp);
+  const firestore = getFirestore(firebaseApp);
+  
+  // Configure Firestore to ignore undefined properties
+  firestore.settings({
+    ignoreUndefinedProperties: true
+  });
+  
+  return firestore;
 }
 
 /**

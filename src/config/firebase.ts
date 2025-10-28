@@ -8,11 +8,23 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 // Initialize Firebase app (singleton)
 const firebaseApp: App = getApps().length > 0 ? getApps()[0] : initializeApp();
 
+// Initialize Firestore with settings (singleton)
+let firestoreInstance: Firestore | null = null;
+
 /**
  * Get Firestore database instance
  */
 export function getDatabase(): Firestore {
-  return getFirestore(firebaseApp);
+  if (!firestoreInstance) {
+    firestoreInstance = getFirestore(firebaseApp);
+    
+    // Configure Firestore to ignore undefined properties (only on first initialization)
+    firestoreInstance.settings({
+      ignoreUndefinedProperties: true
+    });
+  }
+  
+  return firestoreInstance;
 }
 
 /**

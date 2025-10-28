@@ -45,13 +45,13 @@ describe('Payment Gateway', () => {
 
   describe('Module Imports', () => {
     it('should import firebase config without errors', async () => {
-      const { getDatabase } = await import('../config/firebase');
+      const { getDatabase } = await import('../src/config/firebase');
       expect(getDatabase).toBeDefined();
       expect(typeof getDatabase).toBe('function');
     });
 
     it('should import provider factory without errors', async () => {
-      const { PaymentProviderFactory } = await import('../providers/factory');
+      const { PaymentProviderFactory } = await import('../src/providers/factory');
       expect(PaymentProviderFactory).toBeDefined();
     });
   });
