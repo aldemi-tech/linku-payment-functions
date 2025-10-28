@@ -40,8 +40,8 @@ export interface PaymentCard {
   card_brand: 'visa' | 'mastercard' | 'amex' | 'other';
   card_type: 'credit' | 'debit';
   provider: PaymentProvider;
-  expiration_month: number;
-  expiration_year: number;
+  expiration_month: number | null;
+  expiration_year: number | null;
   alias?: string; // Nombre personalizado para identificar la tarjeta
   is_default: boolean;
   // Token del procesador de pagos (ej: Stripe, MercadoPago)
@@ -61,8 +61,8 @@ export interface CardToken {
   provider: PaymentProvider;
   card_last_four: string;
   card_brand: string; // visa, mastercard, amex, etc.
-  card_exp_month: number;
-  card_exp_year: number;
+  card_exp_month: number | null;
+  card_exp_year: number | null;
   card_holder_name?: string;
   is_default: boolean;
   created_at: Timestamp;
@@ -169,8 +169,8 @@ export type PaymentStatus =
 export interface PaymentMethodDetails {
   card_last_four: string;
   card_brand: string;
-  card_exp_month: number;
-  card_exp_year: number;
+  card_exp_month: number | null;
+  card_exp_year: number | null;
 }
 
 // ==================== WEBHOOK TYPES ====================
@@ -219,9 +219,9 @@ export interface TokenizationSuccessResponse {
   token_id: string;
   card_last_four: string;
   card_brand: string;
-  card_exp_month: number;
+  card_exp_month: number | null;
   provider: PaymentProvider;
-  card_exp_year: number;
+  card_exp_year: number | null;
   is_default: boolean;
 }
 

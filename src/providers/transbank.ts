@@ -250,8 +250,8 @@ export class TransbankProvider {
           card_last_four: response.card_number.slice(-4) || "****",
           card_brand: response.card_type,
           provider: this.name,
-          card_exp_month: 12,
-          card_exp_year: 2099,
+          card_exp_month: null, // Transbank doesn't provide expiration data
+          card_exp_year: null,  // Transbank doesn't provide expiration data
           is_default: session.set_as_default || false,
         };
       }
@@ -264,8 +264,8 @@ export class TransbankProvider {
         card_brand: response.card_type,
         card_type: "credit", // Transbank doesn't distinguish in Oneclick
         provider: this.name,
-        expiration_month: 12, // Transbank doesn't provide expiration in Oneclick
-        expiration_year: 2099,
+        expiration_month: null, // Transbank doesn't provide expiration data
+        expiration_year: null,  // Transbank doesn't provide expiration data
         is_default: session.set_as_default || false,
         payment_token: response.tbk_user,
         // Transbank Oneclick tokens pueden requerir renovación periódica
@@ -312,8 +312,8 @@ export class TransbankProvider {
         card_last_four: response.card_number.slice(-4) || "****",
         card_brand: response.card_type,
         provider: this.name,
-        card_exp_month: 12,
-        card_exp_year: 2099,
+        card_exp_month: null, // Transbank doesn't provide expiration data
+        card_exp_year: null,  // Transbank doesn't provide expiration data
         is_default: session.set_as_default || false,
       };
     } catch (error: any) {
@@ -487,7 +487,7 @@ export class TransbankProvider {
       );
     }
   }
-  
+
   private mapTransbankStatus(status: string): "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded" {
     switch (status) {
       case "AUTHORIZED":
