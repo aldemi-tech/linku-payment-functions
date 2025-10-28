@@ -87,6 +87,7 @@ export interface RedirectTokenizationRequest {
   user_id: string;
   provider: PaymentProvider;
   return_url: string;
+  finish_redirect_url?: string; // URL to redirect after completion
   set_as_default?: boolean;
   metadata?: Record<string, unknown>;
 }

@@ -162,8 +162,26 @@ export class StripeProvider {
         metadata: {
           user_id: request.user_id,
           set_as_default: request.set_as_default?.toString() || "false",
+          finish_redirect_url: request.finish_redirect_url || "",
         },
       });
+
+      // Save session to Firestore for HTML callback support
+      const sessionData = {
+        session_id: session.id,
+        user_id: request.user_id,
+        provider: this.name,
+        status: "pending",
+        redirect_url: session.url || "",
+        return_url: request.return_url,
+        finish_redirect_url: request.finish_redirect_url,
+        set_as_default: request.set_as_default || false,
+        created_at: Timestamp.now(),
+        expires_at: Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24 hours
+        metadata: request.metadata,
+      };
+
+      await admin.firestore().collection("tokenization_sessions").doc(session.id).set(sessionData);
 
       return {
         session_id: session.id,
@@ -240,10 +258,23 @@ export class StripeProvider {
           .get();
 
         const batch = admin.firestore().batch();
-        userCards.docs.forEach((doc) => {
+        for (const doc of userCards.docs) {
           batch.update(doc.ref, { is_default: false, updated_at: Timestamp.now() });
-        });
+        }
         await batch.commit();
+      }
+
+      // Update session status in Firestore
+      try {
+        await admin.firestore().collection("tokenization_sessions").doc(sessionId).update({
+          status: "completed",
+          token_id: paymentMethod.id,
+          completed_at: Timestamp.now(),
+          card_id: cardId,
+        });
+      } catch (error) {
+        console.warn("Failed to update session status:", error);
+        // Continue execution even if session update fails
       }
 
       return {

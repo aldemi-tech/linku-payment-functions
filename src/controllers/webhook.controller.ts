@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { WebhookService } from "../services/webhook.service";
+import { generateWebhookHTML } from "../utils";
 
 /**
  * Función base para manejar webhooks que puede ser reutilizada por proveedor
@@ -22,7 +23,21 @@ const handleWebhookBase = async (req: Request, res: Response, provider: string) 
       signature
     );
 
-    res.status(200).json(result);
+    // Check if this is a user-facing callback (has redirect URL in query params or headers)
+    const shouldReturnHtml = req.query.html === 'true' || req.headers.accept?.includes('text/html');
+    
+    if (shouldReturnHtml) {
+      // Generate HTML response for user-facing webhook callback
+      const html = generateWebhookHTML(
+        true,
+        "El webhook ha sido procesado exitosamente.",
+        req.query.redirect_url as string
+      );
+      res.status(200).set('Content-Type', 'text/html').send(html);
+    } else {
+      // Standard JSON response for system webhooks
+      res.status(200).json(result);
+    }
   } catch (error: any) {
     console.error(`Webhook processing error:`, {
       provider: provider,
@@ -30,10 +45,24 @@ const handleWebhookBase = async (req: Request, res: Response, provider: string) 
       stack: error.stack,
     });
 
-    res.status(error.statusCode || 500).json({
-      error: error.message || "Webhook processing failed",
-      message: error.message,
-    });
+    // Check if this is a user-facing callback
+    const shouldReturnHtml = req.query.html === 'true' || req.headers.accept?.includes('text/html');
+    
+    if (shouldReturnHtml) {
+      // Generate HTML error response
+      const html = generateWebhookHTML(
+        false,
+        `Error procesando el webhook: ${error.message}`,
+        req.query.redirect_url as string
+      );
+      res.status(error.statusCode || 500).set('Content-Type', 'text/html').send(html);
+    } else {
+      // Standard JSON error response
+      res.status(error.statusCode || 500).json({
+        error: error.message || "Webhook processing failed",
+        message: error.message,
+      });
+    }
   }
 };
 

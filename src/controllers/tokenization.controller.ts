@@ -6,8 +6,9 @@ import {
   ApiResponse,
   PaymentGatewayError,
 } from "../types";
-import { validateRequest, validateRequestCallbacks } from "../utils";
+import { validateRequest, validateRequestCallbacks, generateTokenizationHTML } from "../utils";
 import { TokenizationService } from "../services/tokenization.service";
+import * as admin from "firebase-admin";
 
 const handleError = (error: any): PaymentGatewayError => {
   if (error instanceof PaymentGatewayError) {
@@ -135,34 +136,81 @@ const completeTokenizationBase = async (req: Request, res: Response, provider: P
 
     // Validate authentication and user agent
     const { metadata } = await validateRequestCallbacks(req);
-    const data = req.query as { TBK_ID_SESION: string; TBK_ORDEN_COMPRA: string; TBK_TOKEN: string };
-    console.log("Complete tokenization data", data);
+    
+    // Handle different provider callback formats
+    let sessionId: string;
+    let callbackData: any;
+    
+    if (provider === "transbank") {
+      const tbkData = req.query as { TBK_ID_SESION: string; TBK_ORDEN_COMPRA: string; TBK_TOKEN: string };
+      sessionId = `tbk_${tbkData.TBK_TOKEN}`;
+      callbackData = tbkData;
+    } else {
+      // For Stripe and MercadoPago, session_id is passed directly
+      const genericData = req.query as { session_id?: string; [key: string]: any };
+      sessionId = genericData.session_id || "";
+      callbackData = genericData;
+    }
+    
+    console.log("Complete tokenization data", { sessionId, callbackData, provider });
+    
     // Use service to handle business logic
     const result = await TokenizationService.completeTokenization(
-      `tbk_${data.TBK_TOKEN}`,
-      data,
+      sessionId,
+      callbackData,
       provider,
       metadata
     );
 
-    const response: ApiResponse = {
-      success: true,
-      data: result,
-    };
+    // Get session to retrieve finish_redirect_url
+    const sessionDoc = await admin.firestore().collection("tokenization_sessions").doc(sessionId).get();
+    const sessionData = sessionDoc.data();
+    const finishRedirectUrl = sessionData?.finish_redirect_url;
 
-    res.status(200).json(response);
+    // Generate HTML response for user-facing callback
+    const html = generateTokenizationHTML(
+      true,
+      "Tu tarjeta ha sido registrada exitosamente.",
+      finishRedirectUrl,
+      {
+        last4: result.card_last_four,
+        brand: result.card_brand
+      }
+    );
+
+    res.status(200).set('Content-Type', 'text/html').send(html);
   } catch (error: any) {
     console.error("Error completing tokenization:", error);
     const gatewayError = handleError(error);
-    const response: ApiResponse = {
-      success: false,
-      error: {
-        code: gatewayError.code,
-        message: gatewayError.message,
-        details: gatewayError.details,
-      },
-    };
-    res.status(gatewayError.statusCode || 500).json(response);
+    
+    // Try to get session for redirect URL even on error
+    let finishRedirectUrl;
+    try {
+      // Determine session ID based on provider
+      let errorSessionId: string;
+      if (provider === "transbank") {
+        const tbkData = req.query as { TBK_TOKEN?: string };
+        errorSessionId = `tbk_${tbkData.TBK_TOKEN}`;
+      } else {
+        const genericData = req.query as { session_id?: string };
+        errorSessionId = genericData.session_id || "";
+      }
+      
+      const sessionDoc = await admin.firestore().collection("tokenization_sessions").doc(errorSessionId).get();
+      const sessionData = sessionDoc.data();
+      finishRedirectUrl = sessionData?.finish_redirect_url;
+    } catch {
+      // Ignore errors when retrieving session
+    }
+
+    // Generate HTML error response for user-facing callback
+    const html = generateTokenizationHTML(
+      false,
+      `Error al registrar la tarjeta: ${gatewayError.message}`,
+      finishRedirectUrl
+    );
+
+    res.status(gatewayError.statusCode || 500).set('Content-Type', 'text/html').send(html);
   }
 };
 

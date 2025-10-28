@@ -142,6 +142,7 @@ export class TransbankProvider {
         status: "pending",
         redirect_url: response.url_webpay,
         return_url: request.return_url,
+        finish_redirect_url: request.finish_redirect_url,
         token: response.token,
         username: username,
         email: email,

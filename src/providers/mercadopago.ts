@@ -209,6 +209,7 @@ export class MercadoPagoProvider {
         metadata: {
           user_id: request.user_id,
           set_as_default: request.set_as_default?.toString() || "false",
+          finish_redirect_url: request.finish_redirect_url || "",
         },
       };
 
@@ -225,6 +226,23 @@ export class MercadoPagoProvider {
       const redirectUrl = this.environment === "sandbox" 
         ? preference.sandbox_init_point 
         : preference.init_point;
+
+      // Save session to Firestore for HTML callback support
+      const sessionData = {
+        session_id: preference.id,
+        user_id: request.user_id,
+        provider: this.name,
+        status: "pending",
+        redirect_url: redirectUrl,
+        return_url: request.return_url,
+        finish_redirect_url: request.finish_redirect_url,
+        set_as_default: request.set_as_default || false,
+        created_at: Timestamp.now(),
+        expires_at: Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24 hours
+        metadata: request.metadata,
+      };
+
+      await admin.firestore().collection("tokenization_sessions").doc(preference.id).set(sessionData);
 
       return {
         session_id: preference.id,
@@ -305,6 +323,31 @@ export class MercadoPagoProvider {
           batch.update(doc.ref, { is_default: false, updated_at: Timestamp.now() });
         }
         await batch.commit();
+      }
+
+      // Update session status in Firestore if it exists
+      try {
+        // Try to find session by external_reference (user_id)
+        const sessionQuery = await admin.firestore()
+          .collection("tokenization_sessions")
+          .where("user_id", "==", userId)
+          .where("provider", "==", this.name)
+          .where("status", "==", "pending")
+          .limit(1)
+          .get();
+
+        if (!sessionQuery.empty) {
+          const sessionDoc = sessionQuery.docs[0];
+          await sessionDoc.ref.update({
+            status: "completed",
+            token_id: payment.id.toString(),
+            completed_at: Timestamp.now(),
+            card_id: cardId,
+          });
+        }
+      } catch (error) {
+        console.warn("Failed to update session status:", error);
+        // Continue execution even if session update fails
       }
 
       return {
