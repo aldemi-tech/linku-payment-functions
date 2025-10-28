@@ -46,7 +46,7 @@ export interface PaymentCard {
   is_default: boolean;
   // Token del procesador de pagos (ej: Stripe, MercadoPago)
   payment_token?: string;
-  authorization_code: string | null;
+  authorization_code?: string | null;
   // Expiración del token (suscripción)
   token_expires_at?: Timestamp;
   // Indica si requiere CVC para pagos futuros
