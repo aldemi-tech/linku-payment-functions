@@ -165,7 +165,7 @@ const completeTokenizationBase = async (req: Request, res: Response, provider: P
     // Get session to retrieve finish_redirect_url
     const sessionDoc = await admin.firestore().collection("tokenization_sessions").doc(sessionId).get();
     const sessionData = sessionDoc.data();
-    const finishRedirectUrl = sessionData?.finish_redirect_url;
+    const finishRedirectUrl = sessionData?.finish_redirect_url || null;
 
     // Generate HTML response for user-facing callback
     const html = generateTokenizationHTML(
@@ -198,7 +198,7 @@ const completeTokenizationBase = async (req: Request, res: Response, provider: P
       
       const sessionDoc = await admin.firestore().collection("tokenization_sessions").doc(errorSessionId).get();
       const sessionData = sessionDoc.data();
-      finishRedirectUrl = sessionData?.finish_redirect_url;
+      finishRedirectUrl = sessionData?.finish_redirect_url || null;
     } catch {
       // Ignore errors when retrieving session
     }

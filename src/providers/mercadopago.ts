@@ -209,7 +209,7 @@ export class MercadoPagoProvider {
         metadata: {
           user_id: request.user_id,
           set_as_default: request.set_as_default?.toString() || "false",
-          finish_redirect_url: request.finish_redirect_url || "",
+          finish_redirect_url: request.finish_redirect_url || null,
         },
       };
 
@@ -235,7 +235,7 @@ export class MercadoPagoProvider {
         status: "pending",
         redirect_url: redirectUrl,
         return_url: request.return_url,
-        finish_redirect_url: request.finish_redirect_url,
+        finish_redirect_url: request.finish_redirect_url || null,
         set_as_default: request.set_as_default || false,
         created_at: Timestamp.now(),
         expires_at: Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24 hours

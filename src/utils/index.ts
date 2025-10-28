@@ -252,7 +252,7 @@ export function generateTokenizationHTML(
     `;
   }
 
-  const redirectScript = redirectUrl ? `
+  const redirectScript = (redirectUrl && redirectUrl !== "null") ? `
     <script>
       setTimeout(function() {
         window.location.href = "${redirectUrl}";
@@ -260,7 +260,7 @@ export function generateTokenizationHTML(
     </script>
   ` : "";
 
-  const redirectMessage = redirectUrl ? 
+  const redirectMessage = (redirectUrl && redirectUrl !== "null") ? 
     `<p style="color: #6c757d; font-size: 14px;">Redirigiendo automáticamente en 3 segundos...</p>` : "";
 
   return `
@@ -330,7 +330,7 @@ export function generateTokenizationHTML(
             <div class="message">${message}</div>
             ${cardInfoHtml}
             ${redirectMessage}
-            ${redirectUrl ? `<a href="${redirectUrl}" class="redirect-button">Continuar</a>` : ""}
+            ${(redirectUrl && redirectUrl !== "null") ? `<a href="${redirectUrl}" class="redirect-button">Continuar</a>` : ""}
         </div>
     </body>
     </html>
@@ -361,7 +361,7 @@ export function generateWebhookHTML(
     `;
   }
 
-  const redirectScript = redirectUrl ? `
+  const redirectScript = (redirectUrl && redirectUrl !== "null") ? `
     <script>
       setTimeout(function() {
         window.location.href = "${redirectUrl}";
@@ -369,7 +369,7 @@ export function generateWebhookHTML(
     </script>
   ` : "";
 
-  const redirectMessage = redirectUrl ? 
+  const redirectMessage = (redirectUrl && redirectUrl !== "null") ? 
     `<p style="color: #6c757d; font-size: 14px;">Redirigiendo automáticamente en 3 segundos...</p>` : "";
 
   return `
@@ -439,7 +439,7 @@ export function generateWebhookHTML(
             <div class="message">${message}</div>
             ${paymentInfoHtml}
             ${redirectMessage}
-            ${redirectUrl ? `<a href="${redirectUrl}" class="redirect-button">Continuar</a>` : ""}
+            ${(redirectUrl && redirectUrl !== "null") ? `<a href="${redirectUrl}" class="redirect-button">Continuar</a>` : ""}
         </div>
     </body>
     </html>
