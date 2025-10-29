@@ -231,6 +231,7 @@ export class MercadoPagoProvider {
       const sessionData = {
         session_id: preference.id,
         user_id: request.user_id,
+        alias: request.alias || "Tarjeta suscrita",
         provider: this.name,
         status: "pending",
         redirect_url: redirectUrl,

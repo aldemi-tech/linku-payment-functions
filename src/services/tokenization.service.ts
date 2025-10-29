@@ -81,24 +81,7 @@ export class TokenizationService {
     });
 
     const provider = PaymentProviderFactory.getProvider(data.provider);
-    const result = await provider.createTokenizationSession(data);
-
-    // Save tokenization session with metadata
-    if (result.session_id) {
-      await db.collection("tokenization_sessions").doc(result.session_id).set({
-        user_id: data.user_id,
-        provider: data.provider,
-        session_id: result.session_id,
-        type: 'redirect',
-        status: 'pending',
-        return_url: data.return_url,
-        set_as_default: data.set_as_default || false,
-        metadata: metadata,
-        created_at: createTimestamp(),
-      });
-    }
-
-    return result;
+    return await provider.createTokenizationSession(data);
   }
 
   /**

@@ -174,6 +174,7 @@ export class StripeProvider {
         status: "pending",
         redirect_url: session.url || "",
         return_url: request.return_url,
+        alias: request.alias || "Tarjeta suscrita",
         finish_redirect_url: request.finish_redirect_url || null,
         set_as_default: request.set_as_default || false,
         created_at: Timestamp.now(),
