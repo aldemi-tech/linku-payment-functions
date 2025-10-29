@@ -89,6 +89,7 @@ export interface RedirectTokenizationRequest {
   provider: PaymentProvider;
   return_url: string;
   finish_redirect_url?: string; // URL to redirect after completion
+  alias?: string; // Custom name for the card
   set_as_default?: boolean;
   metadata?: Record<string, unknown>;
 }

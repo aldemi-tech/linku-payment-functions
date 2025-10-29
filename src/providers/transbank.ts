@@ -145,6 +145,7 @@ export class TransbankProvider {
         token: response.token,
         username,
         email,
+        alias: request.alias || "Tarjeta suscrita",
         set_as_default: request.set_as_default || false,
         created_at: Timestamp.now(),
         expires_at: Timestamp.fromDate(new Date(Date.now() + 30 * 60 * 1000)), // 30 minutes
@@ -290,6 +291,7 @@ export class TransbankProvider {
       }
 
       const cardData: PaymentCard = {
+        alias: session.alias ,
         card_id: cardId,
         user_id: session.user_id,
         card_holder_name: userData?.name || "N/A",
